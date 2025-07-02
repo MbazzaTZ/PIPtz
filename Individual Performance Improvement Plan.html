@@ -1,0 +1,2568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Individual Performance Improvement Plan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- D3.js for charting -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        /* Custom styles for the form */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            opacity: 0; /* Hide container initially */
+            transition: opacity 0.1s ease-in-out; /* Faster fade-in */
+        }
+        .container.loaded {
+            opacity: 1; /* Show container when loaded */
+        }
+        .form-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            background-color: #fdfdfd;
+        }
+        .form-section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 8px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        .input-group input[type="text"],
+        .input-group input[type="date"],
+        .input-group input[type="number"],
+        .input-group textarea,
+        .input-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        .input-group input[type="text"]:focus,
+        .input-group input[type="date"]:focus,
+        .input-group input[type="number"]:focus,
+        .input-group textarea:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f8f8f8;
+            font-weight: 600;
+            color: #444;
+        }
+        table td input[type="text"],
+        table td input[type="date"],
+        table td input[type="number"],
+        table td textarea,
+        table td select {
+            width: 100%;
+            border: 1px solid #e0e0e0;
+            padding: 8px;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        /* Disable inputs in read-only mode */
+        .read-only-section input,
+        .read-only-section textarea,
+        .read-only-section select {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+            border-color: #e0e0e0;
+        }
+        .read-only-section .add-button {
+            display: none;
+        }
+        /* Specific override for monthly review inputs that can be updated in read-only mode */
+        .monthly-review-section.read-only-section .actual-performance-input,
+        .monthly-review-section.read-only-section .review-date-input {
+            background-color: #fff; /* Re-enable background for editable fields */
+            cursor: text;
+            border-color: #ccc;
+        }
+
+
+        .signature-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        .signature-block {
+            padding: 15px;
+            border: 1px dashed #b0b0b0;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .signature-block label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+            color: #555;
+        }
+        .signature-block input[type="text"],
+        .signature-block input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            cursor: default; /* Change cursor for disabled radios */
+        }
+        .radio-group input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2); /* Make radio buttons slightly larger */
+        }
+        .submit-button {
+            background-color: #007bff;
+            color: white;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: block;
+            width: fit-content;
+            margin: 30px auto 0;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+        .submit-button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .message-box {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .message-box h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+        .message-box p {
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .message-box button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .message-box button:hover {
+            background-color: #0056b3;
+        }
+        .overlay {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        /* Loading Spinner Styles */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .spinner {
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            background-color: #e2e8f0;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+        }
+        .nav-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #4a5568;
+            border-radius: 6px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            margin: 2px; /* Add margin between tabs */
+        }
+        .nav-tab:hover {
+            background-color: #cbd5e0;
+        }
+        .nav-tab.active {
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        }
+
+        /* History Section Styles */
+        .history-entry {
+            background-color: #fefefe;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .history-entry h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .history-entry p {
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .history-actions button {
+            margin-right: 10px;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+        .history-actions .view-button {
+            background-color: #28a745;
+            color: white;
+        }
+        .history-actions .view-button:hover {
+            background-color: #218838;
+        }
+        .history-actions .download-button {
+            background-color: #6c757d;
+            color: white;
+        }
+        .history-actions .download-button:hover {
+            background-color: #5a6268;
+        }
+        .history-detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1002;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+        .history-detail-content {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 800px;
+            width: 90%;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+            position: relative;
+        }
+        .history-detail-content h2 {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .history-detail-content pre {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .history-detail-content .close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #888;
+            transition: color 0.2s ease;
+        }
+        .history-detail-content .close-button:hover {
+            color: #333;
+        }
+        /* Buttons for section actions */
+        .section-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            /* Use flex-wrap to allow buttons to wrap on smaller screens */
+            flex-wrap: wrap; 
+            justify-content: flex-end;
+        }
+        .section-actions button {
+            /* Remove fixed width to allow content-based sizing */
+            /* padding: 8px 15px;  already defined in general button style */
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+            /* Add some padding for better touch targets and visual spacing */
+            padding: 10px 18px; 
+            /* Ensure minimum width for very short text, but allow growth */
+            min-width: 100px; 
+            /* Flex properties for consistent spacing and alignment */
+            flex-grow: 1; /* Allow buttons to grow to fill space, but respect max-width */
+            max-width: fit-content; /* Limit max width to content plus padding */
+            box-sizing: border-box; /* Include padding in width calculation */
+        }
+
+        /* Specific button styles (keep existing colors) */
+        .section-actions .save-button {
+            background-color: #007bff;
+            color: white;
+        }
+        .section-actions .save-button:hover {
+            background-color: #0056b3;
+        }
+        .section-actions .edit-button {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .section-actions .edit-button:hover {
+            background-color: #e0a800;
+        }
+        .section-actions .cancel-button {
+            background-color: #dc3545;
+            color: white;
+        }
+        .section-actions .cancel-button:hover {
+            background-color: #c82333;
+        }
+        .monthly-review-submit-change {
+            background-color: #17a2b8;
+            color: white;
+        }
+        .monthly-review-submit-change:hover {
+            background-color: #138496;
+        }
+
+        /* Style for individual section save history entries */
+        .history-section-save-entry {
+            background-color: #e6f7ff; /* Light blue background */
+            border: 1px solid #91d5ff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+            font-size: 0.9rem;
+            color: #333;
+        }
+        .history-section-save-entry strong {
+            color: #0056b3;
+        }
+
+        /* Overall Performance Assessment Dynamic Styling */
+        .performance-category-display {
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .performance-category-display h4 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .performance-category-display p {
+            font-size: 1rem;
+            color: #555;
+        }
+
+        /* Specific styles for each category */
+        .category-excellent {
+            background-color: #d4edda; /* Light green */
+            border-color: #28a745; /* Green */
+            color: #155724;
+        }
+        .category-good {
+            background-color: #fff3cd; /* Light yellow */
+            border-color: #ffc107; /* Yellow */
+            color: #856404;
+        }
+        .category-satisfactory {
+            background-color: #cfe2ff; /* Light blue */
+            border-color: #007bff; /* Blue */
+            color: #004085;
+        }
+        .category-unacceptable {
+            background-color: #f8d7da; /* Light red */
+            border-color: #dc3545; /* Red */
+            color: #721c24;
+        }
+        .category-na {
+            background-color: #e9ecef; /* Light gray */
+            border-color: #6c757d; /* Gray */
+            color: #495057;
+        }
+
+        /* Dashboard Section Styles */
+        .dashboard-card {
+            background-color: #fefefe;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        .dashboard-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .dashboard-card p {
+            font-size: 1.2rem;
+            color: #555;
+        }
+        .dashboard-card .score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin-top: 10px;
+        }
+        .dashboard-objective-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 15px;
+            text-align: left;
+        }
+        .dashboard-objective-list li {
+            background-color: #f8f8f8;
+            border-radius: 5px;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+        .dashboard-objective-list li strong {
+            color: #333;
+        }
+        .dashboard-objective-list li span {
+            font-weight: 600;
+            color: #28a745; /* Green for score */
+        }
+
+        /* KPI Tracking Specific Styles */
+        .kpi-definition-card {
+            background-color: #fefefe;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        .kpi-performance-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #fdfdfd;
+        }
+        .kpi-performance-table-container table {
+            width: 100%;
+            min-width: 800px; /* Ensure table is wide enough for multiple date columns */
+            border-collapse: collapse;
+        }
+        .kpi-performance-table-container th,
+        .kpi-performance-table-container td {
+            border: 1px solid #eee;
+            padding: 8px;
+            text-align: left;
+            white-space: nowrap; /* Prevent date columns from wrapping */
+        }
+        .kpi-performance-table-container th {
+            background-color: #e9f5ff; /* Light blue for KPI table headers */
+            font-weight: 600;
+            color: #0056b3;
+        }
+        .kpi-performance-table-container input[type="number"],
+        .kpi-performance-table-container input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .kpi-performance-table-container textarea {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            min-height: 40px;
+            resize: vertical;
+        }
+        .kpi-acknowledgement-checkbox {
+            transform: scale(1.2);
+            margin-right: 8px;
+        }
+
+        /* D3 Chart Styles */
+        .chart-container {
+            margin-top: 20px;
+            background-color: #fefefe;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            overflow-x: auto; /* Allow horizontal scrolling for charts if needed */
+        }
+        .chart-container svg {
+            display: block; /* Remove extra space below SVG */
+            margin: auto;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #ccc;
+            shape-rendering: crispEdges;
+        }
+        .axis text {
+            font-family: "Inter", sans-serif;
+            font-size: 0.8rem;
+            fill: #666;
+        }
+        .line {
+            fill: none;
+            stroke: #007bff;
+            stroke-width: 2px;
+        }
+        .dot {
+            fill: #007bff;
+            stroke: #fff;
+            stroke-width: 1.5px;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 8px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+
+        /* Print-specific styles for Final Review Page */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #finalReviewPage, #finalReviewPage * {
+                visibility: visible;
+            }
+            #finalReviewPage {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+                box-sizing: border-box;
+                background-color: #fff;
+            }
+            .nav-tabs, .section-actions, .submit-button, .message-box, .overlay, .loading-overlay {
+                display: none !important;
+            }
+            .form-section {
+                border: 1px solid #ccc;
+                margin-bottom: 15px;
+                padding: 15px;
+            }
+            .form-section-title {
+                border-bottom: 1px solid #eee;
+                padding-bottom: 5px;
+                margin-bottom: 10px;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            table th, table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+            }
+            .signature-section {
+                display: block; /* Stack signatures vertically for print */
+            }
+            .signature-block {
+                margin-bottom: 15px;
+                border: none;
+                padding: 0;
+            }
+            .signature-block label, .signature-block input {
+                display: inline-block;
+                width: auto;
+                border: none;
+                padding: 0;
+                margin: 0;
+            }
+            .signature-block input {
+                border-bottom: 1px dashed #000; /* Underline for signature */
+                width: 150px; /* Fixed width for signature line */
+                margin-left: 5px;
+            }
+            .radio-group label, .radio-group p {
+                display: block;
+                margin-left: 0;
+            }
+            .radio-group input[type="radio"] {
+                display: inline-block;
+            }
+            .performance-category-display {
+                border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Individual Performance Improvement Plan</h1>
+
+        <nav class="nav-tabs">
+            <div id="employeeInfoTab" class="nav-tab" onclick="showSection('employeeInfoSection', this)">Employee Info</div>
+            <div id="formTab" class="nav-tab active" onclick="showSection('formSection', this)">Performance Plan</div>
+            <div id="kpiTrackingTab" class="nav-tab" onclick="showSection('kpiTrackingSection', this)">KPI Tracking</div>
+            <div id="developmentPlanTab" class="nav-tab" onclick="showSection('developmentPlanSection', this)">Development Plan</div>
+            <div id="dashboardTab" class="nav-tab" onclick="showSection('dashboardSection', this)">Dashboard</div>
+            <div id="historyTab" class="nav-tab" onclick="showSection('historySection', this)">History</div>
+            <div id="finalReviewTab" class="nav-tab" onclick="showSection('finalReviewPage', this)">Final Review</div>
+        </nav>
+
+        <div class="form-section" id="persistenceSettingsSection" style="display: none;">
+            <h2 class="form-section-title">Persistence Settings</h2>
+            <div class="input-group flex items-center">
+                <input type="checkbox" id="useLocalStorage" class="mr-2" onchange="togglePersistenceStorage()">
+                <label for="useLocalStorage" class="mb-0">Use Local Storage (data persists across sessions)</label>
+            </div>
+            <p class="text-sm text-gray-600 mt-2">
+                <span id="currentStorageInfo"></span>
+            </p>
+        </div>
+
+        <div class="form-section" id="employeeInfoSection" style="display: none;">
+            <h2 class="form-section-title">Employee Information</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="input-group">
+                    <label for="employeeName">Employee Name:</label>
+                    <input type="text" id="employeeName" name="employeeName" class="rounded-lg" required oninput="updateJobholderName()">
+                </div>
+                <div class="input-group">
+                    <label for="employeeDepartment">Department:</label>
+                    <select id="employeeDepartment" name="employeeDepartment" class="rounded-lg" required>
+                        <option value="">Select Department</option>
+                        <option value="Sales">Sales</option>
+                        <option value="Marketing">Marketing</option>
+                        <option value="Human Resources">Human Resources</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Operations">Operations</option>
+                        <option value="IT">IT</option>
+                        <option value="Customer Service">Customer Service</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="employeePosition">Position:</label>
+                    <select id="employeePosition" name="employeePosition" class="rounded-lg" required>
+                        <option value="">Select Position</option>
+                        <option value="Associate">Associate</option>
+                        <option value="Specialist">Specialist</option>
+                        <option value="Manager">Manager</option>
+                        <option value="Senior Manager">Senior Manager</option>
+                        <option value="Director">Director</option>
+                        <option value="VP">VP</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="dateJoinedCompany">Date Joined Company:</label>
+                    <input type="date" id="dateJoinedCompany" name="dateJoinedCompany" class="rounded-lg" required>
+                </div>
+                <div class="input-group">
+                    <label for="contactNumber">Contact Number/Email:</label>
+                    <input type="text" id="contactNumber" name="contactNumber" class="rounded-lg" placeholder="e.g., +2557XXXXXXXX / email@example.com" required>
+                </div>
+                <div class="input-group">
+                    <label for="contactType">Contact Type:</label>
+                    <select id="contactType" name="contactType" class="rounded-lg" required>
+                        <option value="">Select Contact Type</option>
+                        <option value="Mobile">Mobile</option>
+                        <option value="Work Email">Work Email</option>
+                        <option value="Personal Email">Personal Email</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="reportingManagerName">Reporting Manager Name:</label>
+                    <input type="text" id="reportingManagerName" name="reportingManagerName" class="rounded-lg" required>
+                </div>
+                <div class="input-group">
+                    <label for="reportingManagerPosition">Manager Position:</label>
+                    <input type="text" id="reportingManagerPosition" name="reportingManagerPosition" class="rounded-lg" required>
+                </div>
+                <div class="input-group">
+                    <label for="startDate">Start Date (PIP):</label>
+                    <input type="date" id="startDate" name="startDate" class="rounded-lg" required>
+                </div>
+                <div class="input-group">
+                    <label for="finalReviewDate">Final Review Date (PIP):</label>
+                    <input type="date" id="finalReviewDate" name="finalReviewDate" class="rounded-lg" required>
+                </div>
+            </div>
+            <div class="section-actions">
+                <button type="button" class="save-button" id="saveEmployeeInfoBtn" aria-label="Save Employee Information" onclick="window.saveEmployeeDetails()">Save Employee Details</button>
+                <button type="button" class="edit-button" id="editEmployeeInfoBtn" style="display:none;" aria-label="Edit Employee Information" onclick="toggleSectionEditMode('employeeInfo', true)">Edit Employee Details</button>
+            </div>
+        </div>
+
+        <div id="formSection">
+            <div class="form-section" id="objectivesSection">
+                <h2 class="form-section-title">Objectives/KPIs</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Objective/KPI (area for improvement)</th>
+                                <th>Target (Description)</th>
+                                <th>Target Value</th>
+                                <th>Target Type</th>
+                                <th>Support Required</th>
+                                <th>Timing (Review Date)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="objectivesTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions">
+                    <button type="button" id="addObjectiveBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300" aria-label="Add new objective">Add Objective</button>
+                    <button type="button" class="save-button" id="saveObjectivesBtn" aria-label="Save Objectives" onclick="window.saveObjectives()">Save Objectives</button>
+                    <button type="button" class="edit-button" id="editObjectivesBtn" style="display:none;" aria-label="Edit Objectives" onclick="toggleSectionEditMode('objectives', true)">Edit Objectives</button>
+                    <button type="button" class="cancel-button" id="cancelObjectivesBtn" style="display:none;" aria-label="Cancel Objective Edits" onclick="cancelSectionEdit('objectives')">Cancel</button>
+                </div>
+            </div>
+
+            <div class="form-section" id="signaturesSection">
+                <h2 class="form-section-title">Signatures</h2>
+                <p class="text-sm text-gray-600 mb-4">Please type your name and select the date for electronic signature.</p>
+                <div class="signature-section">
+                    <div class="signature-block">
+                        <label for="employeeSignatureName">Employee Name (Signature):</label>
+                        <input type="text" id="employeeSignatureName" name="employeeSignatureName" class="rounded-lg" required>
+                        <label for="employeeSignatureDate" class="mt-3">Date:</label>
+                        <input type="date" id="employeeSignatureDate" name="employeeSignatureDate" class="rounded-lg" required>
+                    </div>
+                    <div class="signature-block">
+                        <label for="reportingManagerSignatureName">Reporting Manager Name (Signature):</label>
+                        <input type="text" id="reportingManagerSignatureName" name="reportingManagerSignatureName" class="rounded-lg" required>
+                        <label for="reportingManagerSignatureDate" class="mt-3">Date:</label>
+                        <input type="date" id="reportingManagerSignatureDate" name="reportingManagerSignatureDate" class="rounded-lg" required>
+                    </div>
+                    <div class="signature-block">
+                        <label for="hrSignatureName">HR Name (Signature):</label>
+                        <input type="text" id="hrSignatureName" name="hrSignatureName" class="rounded-lg" required>
+                        <label for="hrSignatureDate" class="mt-3">Date:</label>
+                        <input type="date" id="hrSignatureDate" name="hrSignatureDate" class="rounded-lg" required>
+                    </div>
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="save-button" id="saveSignaturesBtn" aria-label="Save Signatures" onclick="window.saveMainFormData()">Save Signatures</button>
+                    <button type="button" class="edit-button" id="editSignaturesBtn" style="display:none;" aria-label="Edit Signatures" onclick="toggleSectionEditMode('signatures', true)">Edit Signatures</button>
+                </div>
+            </div>
+
+            <div class="form-section monthly-review-section" id="monthlyReviewSection">
+                <h2 class="form-section-title">Monthly Performance Review Records</h2>
+                <p class="text-sm text-gray-600 mb-4">(Add a new entry for each monthly review of performance, including objective-specific performance.)</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Review Date</th>
+                                <th>Objective Reviewed</th>
+                                <th>Target Description</th> <!-- New column for target description -->
+                                <th>Actual Performance</th>
+                                <th>Score (%)</th>
+                                <th>Reviewer Name</th>
+                                <th>Reviewer Position/Rank</th>
+                                <th>Reviewer Notes</th>
+                                <th>Job-holder Name</th>
+                                <th>Job-holder Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthlyReviewTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions">
+                    <button type="button" id="addMonthlyReviewBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300" aria-label="Add new monthly review">Add Monthly Review</button>
+                    <button type="button" class="save-button" id="saveMonthlyReviewsBtn" aria-label="Save Monthly Reviews" onclick="window.saveMonthlyReviews()">Save Monthly Reviews</button>
+                    <button type="button" class="edit-button" id="editMonthlyReviewsBtn" style="display:none;" aria-label="Edit Monthly Reviews" onclick="toggleSectionEditMode('reviews', true)">Edit Monthly Reviews</button>
+                    <button type="button" class="cancel-button" id="cancelMonthlyReviewsBtn" style="display:none;" aria-label="Cancel Monthly Review Edits" onclick="cancelSectionEdit('reviews')">Cancel</button>
+                    <button type="button" class="monthly-review-submit-change" id="submitReviewChangesBtn" style="display:none;" aria-label="Submit only score changes" onclick="window.saveMonthlyReviews(true)">Submit Score Changes</button>
+                </div>
+            </div>
+
+            <div class="form-section" id="discussionLogSection">
+                <h2 class="form-section-title">Action Plan & Strategy Discussion Log</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Discussed By</th>
+                                <th>Topic</th>
+                                <th>Notes/Agreed Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="discussionLogTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions">
+                    <button type="button" id="addDiscussionEntryBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300" aria-label="Add new discussion entry">Add Discussion Entry</button>
+                    <button type="button" class="save-button" id="saveDiscussionLogBtn" aria-label="Save Discussion Log" onclick="window.saveDiscussionLog()">Save Discussion Log</button>
+                    <button type="button" class="edit-button" id="editDiscussionLogBtn" style="display:none;" aria-label="Edit Discussion Log" onclick="toggleSectionEditMode('discussions', true)">Edit Discussion Log</button>
+                    <button type="button" class="cancel-button" id="cancelDiscussionLogBtn" style="display:none;" aria-label="Cancel Discussion Log Edits" onclick="cancelSectionEdit('discussions')">Cancel</button>
+                </div>
+            </div>
+
+            <div class="form-section" id="overallAssessmentSection">
+                <h2 class="form-section-title">Overall Performance Assessment</h2>
+                <p class="text-sm text-gray-600 mb-4">(Automatically calculated based on the latest performance review for each objective.)</p>
+                <div id="performanceCategoryDisplay" class="performance-category-display category-na">
+                    <h4 id="performanceCategoryTitle">N/A</h4>
+                    <p id="performanceCategoryDescription">Enter performance data to calculate the overall assessment.</p>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-lg font-semibold text-gray-800">Calculated Overall Score: <span id="overallScoreDisplay" class="text-blue-600">N/A</span></p>
+                </div>
+
+                <div class="input-group mt-6">
+                    <label for="consequences">Potential Consequences (if goals not met):</label>
+                    <textarea id="consequences" name="consequences" rows="3" class="rounded-lg" placeholder="e.g., Failure to meet goals may result in further disciplinary action." ${!sectionEditStates.overallAssessment ? 'disabled' : ''}></textarea>
+                </div>
+
+                <div class="input-group mt-6">
+                    <label>Confirmation of Outcome:</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="outcomeConfirmation" value="No disciplinary action but continuation of PIP" ${!sectionEditStates.overallAssessment ? 'disabled' : ''}>
+                            No disciplinary action but continuation of PIP
+                        </label>
+                        <label>
+                            <input type="radio" name="outcomeConfirmation" value="No disciplinary action and resume normal management" ${!sectionEditStates.overallAssessment ? 'disabled' : ''}>
+                            No disciplinary action and resume normal management
+                        </label>
+                        <label>
+                            <input type="radio" name="outcomeConfirmation" value="No disciplinary action and move to an informal performance management process" ${!sectionEditStates.overallAssessment ? 'disabled' : ''}>
+                            No disciplinary action and move to an informal performance management process
+                        </label>
+                        <label>
+                            <input type="radio" name="outcomeConfirmation" value="Disciplinary action (a written warning) and continuation of PIP" ${!sectionEditStates.overallAssessment ? 'disabled' : ''}>
+                            Disciplinary action (a written warning) and continuation of PIP
+                        </label>
+                    </div>
+                </div>
+                <div class="section-actions">
+                    <button type="button" class="save-button" id="saveOverallAssessmentBtn" aria-label="Save Overall Assessment" onclick="window.saveOverallAssessment()">Save Assessment</button>
+                    <button type="button" class="edit-button" id="editOverallAssessmentBtn" style="display:none;" aria-label="Edit Overall Assessment" onclick="toggleSectionEditMode('overallAssessment', true)">Edit Assessment</button>
+                    <button type="button" class="cancel-button" id="cancelOverallAssessmentBtn" style="display:none;" aria-label="Cancel Overall Assessment Edits" onclick="cancelSectionEdit('overallAssessment')">Cancel</button>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button" aria-label="Submit Performance Plan for Review" onclick="window.submitPerformancePlan()">Submit Performance Plan for Review</button>
+        </div>
+
+        <div id="kpiTrackingSection" style="display: none;">
+            <h2 class="form-section-title">KPI Tracking & Trends</h2>
+            <p class="text-sm text-gray-600 mb-4">Define specific KPIs and track their performance over time (daily, weekly, or monthly).</p>
+
+            <div class="form-section" id="addKpiDefinitionSection">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Define New KPI</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label for="newKpiNameSelect">KPI Name:</label>
+                        <select id="newKpiNameSelect" class="rounded-lg" onchange="toggleOtherKpiInput()">
+                            <option value="">Select a KPI</option>
+                            <option value="Sub Registration">Sub Registration</option>
+                            <option value="Day-to-Day Truck">Day-to-Day Truck</option>
+                            <option value="Sales Revenue">Sales Revenue</option>
+                            <option value="Customer Acquisition">Customer Acquisition</option>
+                            <option value="Website Traffic">Website Traffic</option>
+                            <option value="Employee Retention">Employee Retention</option>
+                            <option value="Project Completion Rate">Project Completion Rate</option>
+                            <option value="Other">Other (Specify)</option>
+                        </select>
+                        <input type="text" id="newKpiNameOther" class="rounded-lg mt-2" placeholder="Enter custom KPI Name" style="display:none;">
+                    </div>
+                    <div class="input-group">
+                        <label for="newKpiObjective">Associated Objective:</label>
+                        <select id="newKpiObjective" class="rounded-lg" onchange="toggleOtherObjectiveInput()">
+                            <option value="">Select an Objective</option>
+                            <option value="Other">Other (Specify)</option>
+                        </select>
+                        <input type="text" id="newKpiObjectiveOther" class="rounded-lg mt-2" placeholder="Enter custom Objective" style="display:none;">
+                    </div>
+                    <div class="input-group flex items-center">
+                        <input type="checkbox" id="newKpiAcknowledged" class="kpi-acknowledgement-checkbox rounded-md">
+                        <label for="newKpiAcknowledged" class="mb-0">Acknowledged</label>
+                    </div>
+                    <div class="input-group">
+                        <label for="newKpiTargetType">Target Period Type:</label>
+                        <select id="newKpiTargetType" class="rounded-lg">
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="newKpiTargetValue">Target Value:</label>
+                        <input type="number" id="newKpiTargetValue" class="rounded-lg" min="0" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label for="newKpiStartDate">Target Start Date:</label>
+                        <input type="date" id="newKpiStartDate" class="rounded-lg">
+                    </div>
+                    <div class="input-group">
+                        <label for="newKpiEndDate">Target End Date:</label>
+                        <input type="date" id="newKpiEndDate" class="rounded-lg">
+                    </div>
+                    <div class="input-group">
+                        <label for="newKpiUpdateFrequency">Update Frequency:</label>
+                        <select id="newKpiUpdateFrequency" class="rounded-lg">
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="section-actions justify-start">
+                    <button type="button" id="addKpiDefinitionBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Add KPI</button>
+                </div>
+            </div>
+
+            <div id="definedKpisContainer" class="mt-8">
+                <p id="noKpisMessage" class="text-center text-gray-500" style="display: none;">No KPIs defined yet. Add a new KPI above!</p>
+            </div>
+
+            <div class="section-actions mt-8">
+                <button type="button" class="save-button" id="saveKpiTrackingBtn" aria-label="Save KPI Tracking Data" onclick="window.saveKpiTracking()">Save KPI Tracking</button>
+                <button type="button" class="edit-button" id="editKpiTrackingBtn" style="display:none;" aria-label="Edit KPI Tracking Data" onclick="toggleSectionEditMode('kpiTracking', true)">Edit KPI Tracking</button>
+                <button type="button" class="cancel-button" id="cancelKpiTrackingBtn" style="display:none;" aria-label="Cancel KPI Tracking Edits" onclick="cancelSectionEdit('kpiTracking')">Cancel</button>
+            </div>
+        </div>
+
+        <div id="developmentPlanSection" style="display: none;">
+            <h2 class="form-section-title">Employee Development Plan</h2>
+            <p class="text-sm text-gray-600 mb-4">A roadmap to enhance an employee's skills, knowledge, and career trajectory.</p>
+
+            <div class="form-section" id="developmentGoalsSection">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Development Goals (SMART)</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Goal Description</th>
+                                <th>Target/Metric</th>
+                                <th>Timeline</th>
+                                <th>Acknowledged</th>
+                            </tr>
+                        </thead>
+                        <tbody id="developmentGoalsTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions justify-start">
+                    <button type="button" id="addDevelopmentGoalBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Add Goal</button>
+                    <button type="button" class="save-button" id="saveDevelopmentGoalsBtn" aria-label="Save Development Goals" onclick="window.saveDevelopmentPlanSection('goals')">Save Goals</button>
+                    <button type="button" class="edit-button" id="editDevelopmentGoalsBtn" style="display:none;" aria-label="Edit Development Goals" onclick="toggleSectionEditMode('developmentGoals', true)">Edit Goals</button>
+                    <button type="button" class="cancel-button" id="cancelDevelopmentGoalsBtn" style="display:none;" aria-label="Cancel Development Goals Edits" onclick="cancelSectionEdit('developmentGoals')">Cancel</button>
+                </div>
+            </div>
+
+            <div class="form-section" id="skillsGapSection">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Skills Gap Analysis</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Skill/Area</th>
+                                <th>Current Level</th>
+                                <th>Desired Level</th>
+                                <th>Gap Description</th>
+                            </tr>
+                        </thead>
+                        <tbody id="skillsGapTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions justify-start">
+                    <button type="button" id="addSkillsGapBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Add Skill Gap</button>
+                    <button type="button" class="save-button" id="saveSkillsGapBtn" aria-label="Save Skills Gap" onclick="window.saveDevelopmentPlanSection('skillsGap')">Save Skills Gap</button>
+                    <button type="button" class="edit-button" id="editSkillsGapBtn" style="display:none;" aria-label="Edit Skills Gap" onclick="toggleSectionEditMode('skillsGap', true)">Edit Skills Gap</button>
+                    <button type="button" class="cancel-button" id="cancelSkillsGapBtn" style="display:none;" aria-label="Cancel Skills Gap Edits" onclick="cancelSectionEdit('skillsGap')">Cancel</button>
+                </div>
+            </div>
+
+            <div class="form-section" id="actionPlanSection">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Action Plan & Learning Activities</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Activity</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
+                                <th>Status</th>
+                                <th>Resources Needed</th>
+                            </tr>
+                        </thead>
+                        <tbody id="actionPlanTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions justify-start">
+                    <button type="button" id="addActionPlanBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Add Activity</button>
+                    <button type="button" class="save-button" id="saveActionPlanBtn" aria-label="Save Action Plan" onclick="window.saveDevelopmentPlanSection('actionPlan')">Save Action Plan</button>
+                    <button type="button" class="edit-button" id="editActionPlanBtn" style="display:none;" aria-label="Edit Action Plan" onclick="toggleSectionEditMode('actionPlan', true)">Edit Action Plan</button>
+                    <button type="button" class="cancel-button" id="cancelActionPlanBtn" style="display:none;" aria-label="Cancel Action Plan Edits" onclick="cancelSectionEdit('actionPlan')">Cancel</button>
+                </div>
+            </div>
+
+            <div class="form-section" id="evaluationFeedbackSection">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">Evaluation & Feedback</h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Evaluator</th>
+                                <th>Notes/Feedback</th>
+                                <th>Next Steps</th>
+                            </tr>
+                        </thead>
+                        <tbody id="evaluationFeedbackTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div class="section-actions justify-start">
+                    <button type="button" id="addEvaluationFeedbackBtn" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition duration-300">Add Entry</button>
+                    <button type="button" class="save-button" id="saveEvaluationFeedbackBtn" aria-label="Save Evaluation & Feedback" onclick="window.saveDevelopmentPlanSection('evaluationFeedback')">Save Evaluation</button>
+                    <button type="button" class="edit-button" id="editEvaluationFeedbackBtn" style="display:none;" aria-label="Edit Evaluation & Feedback" onclick="toggleSectionEditMode('evaluationFeedback', true)">Edit Evaluation</button>
+                    <button type="button" class="cancel-button" id="cancelEvaluationFeedbackBtn" style="display:none;" aria-label="Cancel Evaluation & Feedback Edits" onclick="cancelSectionEdit('evaluationFeedback')">Cancel</button>
+                </div>
+            </div>
+
+            <div class="section-actions mt-8">
+                <button type="button" class="submit-button" aria-label="Submit Development Plan" onclick="window.submitDevelopmentPlan()">Submit Development Plan</button>
+            </div>
+        </div>
+
+
+        <div id="dashboardSection" style="display: none;">
+            <h2 class="form-section-title">Performance Dashboard</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="dashboard-card">
+                    <h3>Overall Score</h3>
+                    <p class="score" id="dashboardOverallScore">N/A</p>
+                    <p id="dashboardOverallCategory" class="text-sm text-gray-600"></p>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Total Objectives</h3>
+                    <p class="score" id="dashboardTotalObjectives">0</p>
+                </div>
+                <div class="dashboard-card">
+                    <h3>Total Reviews</h3>
+                    <p class="score" id="dashboardTotalReviews">0</p>
+                </div>
+                <div class="dashboard-card md:col-span-2 lg:col-span-3">
+                    <h3>Latest Objective Scores</h3>
+                    <ul id="dashboardLatestObjectiveScores" class="dashboard-objective-list">
+                        <li>No objectives reviewed yet.</li>
+                    </ul>
+                </div>
+                <div class="dashboard-card md:col-span-2 lg:col-span-3">
+                    <h3>KPI Tracking Summary</h3>
+                    <ul id="dashboardKpiSummary" class="dashboard-objective-list">
+                        <li>No KPIs tracked yet.</li>
+                    </ul>
+                </div>
+                <div class="dashboard-card md:col-span-2 lg:col-span-3">
+                    <h3>Development Plan Summary</h3>
+                    <ul id="dashboardDevelopmentPlanSummary" class="dashboard-objective-list">
+                        <li>No development goals defined yet.</li>
+                    </ul>
+                </div>
+            </div>
+            <!-- New: KPI Trend Chart Container -->
+            <div class="chart-container" id="kpiTrendChartContainer" style="display:none;">
+                <h3 class="text-xl font-semibold text-gray-700 mb-4">KPI Performance Trend: <span id="kpiTrendChartTitle"></span></h3>
+                <div id="kpiTrendChart"></div>
+            </div>
+        </div>
+
+        <div id="historySection" style="display: none;">
+            <h2 class="form-section-title">Performance Plan History</h2>
+            <div id="historyList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <p id="noHistoryMessage" class="col-span-full text-center text-gray-500">No performance history found yet. Submit a plan or save a section to see it here!</p>
+            </div>
+        </div>
+
+        <div id="finalReviewPage" style="display: none;">
+            <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Individual Performance Improvement Plan - Final Review</h1>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Employee Information</h2>
+                <p><strong>Employee Name:</strong> <span id="printEmployeeName"></span></p>
+                <p><strong>Department:</strong> <span id="printEmployeeDepartment"></span></p>
+                <p><strong>Position:</strong> <span id="printEmployeePosition"></span></p>
+                <p><strong>Date Joined Company:</strong> <span id="printDateJoinedCompany"></span></p>
+                <p><strong>Contact:</strong> <span id="printContactNumber"></span> (<span id="printContactType"></span>)</p>
+                <p><strong>Reporting Manager:</strong> <span id="printReportingManagerName"></span> (<span id="printReportingManagerPosition"></span>)</p>
+                <p><strong>Start Date (PIP):</strong> <span id="printStartDate"></span></p>
+                <p><strong>Final Review Date (PIP):</strong> <span id="printFinalReviewDate"></span></p>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Objectives/KPIs</h2>
+                <div class="table-container">
+                    <table id="printObjectivesTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Objective/KPI (area for improvement)</th>
+                                <th>Target (Description)</th>
+                                <th>Target Value</th>
+                                <th>Target Type</th>
+                                <th>Support Required</th>
+                                <th>Timing (Review Date)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">KPI Tracking & Trends</h2>
+                <div id="printKpiTrackingContainer">
+                    <p class="text-center text-gray-500">No KPIs defined.</p>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Employee Development Plan</h2>
+                <div id="printDevelopmentPlanContainer">
+                    <p class="text-center text-gray-500">No development plan defined.</p>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Monthly Performance Review Records</h2>
+                <div class="table-container">
+                    <table id="printMonthlyReviewTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Review Date</th>
+                                <th>Objective Reviewed</th>
+                                <th>Target Description</th> <!-- New column for target description -->
+                                <th>Actual Performance</th>
+                                <th>Score (%)</th>
+                                <th>Reviewer Name</th>
+                                <th>Reviewer Position/Rank</th>
+                                <th>Reviewer Notes</th>
+                                <th>Job-holder Name</th>
+                                <th>Job-holder Comments</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Action Plan & Strategy Discussion Log</h2>
+                <div class="table-container">
+                    <table id="printDiscussionLogTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Date</th>
+                                <th>Discussed By</th>
+                                <th>Topic</th>
+                                <th>Notes/Agreed Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Overall Performance Assessment</h2>
+                <div id="printPerformanceCategoryDisplay" class="performance-category-display">
+                    <h4 id="printPerformanceCategoryTitle"></h4>
+                    <p id="printPerformanceCategoryDescription"></p>
+                </div>
+                <p class="text-lg font-semibold text-gray-800 mt-4">Calculated Overall Score: <span id="printOverallScoreDisplay" class="text-blue-600"></span></p>
+                <p class="mt-4"><strong>Potential Consequences:</strong> <span id="printConsequences"></span></p>
+                <p class="mt-2"><strong>Outcome Confirmation:</strong> <span id="printOutcomeConfirmation"></span></p>
+            </div>
+
+            <div class="form-section">
+                <h2 class="form-section-title">Signatures</h2>
+                <div class="signature-section">
+                    <div class="signature-block">
+                        <p><strong>Employee Name:</strong> <span id="printEmployeeSignatureName"></span></p>
+                        <p><strong>Date:</strong> <span id="printEmployeeSignatureDate"></span></p>
+                    </div>
+                    <div class="signature-block">
+                        <p><strong>Reporting Manager Name:</strong> <span id="printReportingManagerSignatureName"></span></p>
+                        <p><strong>Date:</strong> <span id="printReportingManagerSignatureDate"></span></p>
+                    </div>
+                    <div class="signature-block">
+                        <p><strong>HR Name:</strong> <span id="printHrSignatureName"></span></p>
+                        <p><strong>Date:</strong> <span id="printHrSignatureDate"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-8">
+                <button onclick="window.print()" class="submit-button">Print This Page</button>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="message-box" id="messageBox">
+        <h3 id="messageBoxTitle"></h3>
+        <p id="messageBoxContent"></p>
+        <button onclick="hideMessageBox()">OK</button>
+    </div>
+
+    <div class="message-box" id="confirmBox" style="display: none;">
+        <h3 id="confirmBoxTitle"></h3>
+        <p id="confirmBoxContent"></p>
+        <button id="confirmBoxConfirmBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg">Confirm</button>
+        <button id="confirmBoxCancelBtn" class="ml-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg">Cancel</button>
+    </div>
+
+    <div id="historyDetailModal" class="history-detail-modal">
+        <div class="history-detail-content">
+            <button class="close-button" onclick="hideHistoryDetailModal()">&times;</button>
+            <h2 id="historyDetailTitle"></h2>
+            <pre id="historyDetailContent"></pre>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Utility Functions ---
+
+        /**
+         * Sanitizes input strings to prevent XSS attacks.
+         * @param {string} input - The string to sanitize.
+         * @returns {string} The sanitized string.
+         */
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') {
+                return input; // Return as is if not a string (e.g., number, boolean)
+            }
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(input));
+            return div.innerHTML;
+        }
+
+        /**
+         * Debounce function to limit how often a function is called.
+         * @param {function} func - The function to debounce.
+         * @param {number} delay - The delay in milliseconds.
+         * @returns {function} The debounced function.
+         */
+        function debounce(func, delay) {
+            let timeout;
+            return function(...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        // Function to show custom message box
+        function showMessageBox(title, message) {
+            document.getElementById('messageBoxTitle').innerText = sanitizeInput(title);
+            document.getElementById('messageBoxContent').innerText = sanitizeInput(message);
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('messageBox').style.display = 'block';
+        }
+
+        // Function to hide custom message box
+        function hideMessageBox() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('messageBox').style.display = 'none';
+        }
+
+        // Function to show custom confirmation box
+        function showConfirmBox(title, message, onConfirm, onCancel) {
+            document.getElementById('confirmBoxTitle').innerText = sanitizeInput(title);
+            document.getElementById('confirmBoxContent').innerText = sanitizeInput(message);
+            document.getElementById('confirmBox').style.display = 'block';
+            document.getElementById('overlay').style.display = 'block';
+
+            document.getElementById('confirmBoxConfirmBtn').onclick = () => {
+                hideConfirmBox();
+                if (onConfirm) onConfirm();
+            };
+            document.getElementById('confirmBoxCancelBtn').onclick = () => {
+                hideConfirmBox();
+                if (onCancel) onCancel();
+            };
+        }
+
+        // Function to hide custom confirmation box
+        function hideConfirmBox() {
+            document.getElementById('confirmBox').style.display = 'none';
+            document.getElementById('overlay').style.display = 'none';
+        }
+
+        // Function to show history detail modal
+        function showHistoryDetailModal(title, content) {
+            document.getElementById('historyDetailTitle').innerText = sanitizeInput(title);
+            document.getElementById('historyDetailContent').innerText = sanitizeInput(content); // Use innerText for pre-formatted content
+            document.getElementById('historyDetailModal').style.display = 'flex';
+        }
+
+        // Function to hide history detail modal
+        function hideHistoryDetailModal() {
+            document.getElementById('historyDetailModal').style.display = 'none';
+        }
+
+        // Navigation logic
+        function showSection(sectionId, clickedTab) {
+            // Hide all sections
+            document.getElementById('employeeInfoSection').style.display = 'none';
+            document.getElementById('formSection').style.display = 'none';
+            document.getElementById('kpiTrackingSection').style.display = 'none';
+            document.getElementById('developmentPlanSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('historySection').style.display = 'none';
+            document.getElementById('finalReviewPage').style.display = 'none';
+
+            // Remove active class from all tabs
+            document.getElementById('employeeInfoTab').classList.remove('active');
+            document.getElementById('formTab').classList.remove('active');
+            document.getElementById('kpiTrackingTab').classList.remove('active');
+            document.getElementById('developmentPlanTab').classList.remove('active');
+            document.getElementById('dashboardTab').classList.remove('active');
+            document.getElementById('historyTab').classList.remove('active');
+            document.getElementById('finalReviewTab').classList.remove('active');
+
+            // Show the selected section
+            document.getElementById(sectionId).style.display = 'block';
+
+            // Add active class to the clicked tab
+            if (clickedTab) {
+                clickedTab.classList.add('active');
+            }
+
+            // If navigating to history, ensure it's loaded
+            if (sectionId === 'historySection') {
+                loadHistory();
+            } else if (sectionId === 'dashboardSection') {
+                renderDashboard();
+            } else if (sectionId === 'finalReviewPage') {
+                populateFinalReviewPage();
+            } else if (sectionId === 'kpiTrackingSection') {
+                renderKpiTrackingSection();
+                updateKpiObjectiveDropdown(); // Ensure objective dropdown is updated
+            } else if (sectionId === 'developmentPlanSection') {
+                renderDevelopmentPlanSection();
+            }
+        }
+
+        // State for edit modes
+        let sectionEditStates = {
+            employeeInfo: true,
+            objectives: true,
+            signatures: true,
+            reviews: true,
+            discussions: true,
+            overallAssessment: true,
+            kpiTracking: true,
+            developmentGoals: true,
+            skillsGap: true,
+            actionPlan: true,
+            evaluationFeedback: true
+        };
+
+        // Function to toggle edit mode for a section
+        function toggleSectionEditMode(sectionName, isEditable) {
+            const sectionElement = document.getElementById(`${sectionName}Section`);
+            if (!sectionElement) return;
+
+            sectionEditStates[sectionName] = isEditable;
+
+            // Select all relevant input elements within the section
+            const inputs = sectionElement.querySelectorAll('input, textarea, select');
+            inputs.forEach(input => {
+                // Special handling for monthly review's actualPerformance and reviewDate
+                if (sectionName === 'reviews' && (input.classList.contains('actual-performance-input') || input.classList.contains('review-date-input'))) {
+                    input.disabled = false; // Always editable for score updates
+                } else {
+                    input.disabled = !isEditable;
+                }
+            });
+
+            // Toggle CSS class for visual feedback
+            if (isEditable) {
+                sectionElement.classList.remove('read-only-section');
+            } else {
+                sectionElement.classList.add('read-only-section');
+            }
+
+            // Toggle buttons
+            const saveBtn = document.getElementById(`save${capitalizeFirstLetter(sectionName)}Btn`);
+            const editBtn = document.getElementById(`edit${capitalizeFirstLetter(sectionName)}Btn`);
+            const addBtn = document.getElementById(`add${capitalizeFirstLetter(sectionName)}Btn`);
+            const cancelBtn = document.getElementById(`cancel${capitalizeFirstLetter(sectionName)}Btn`);
+            const submitReviewChangesBtn = document.getElementById('submitReviewChangesBtn');
+
+            // For KPI Tracking, handle its specific add button
+            const addKpiDefinitionBtn = document.getElementById('addKpiDefinitionBtn');
+            if (sectionName === 'kpiTracking' && addKpiDefinitionBtn) {
+                addKpiDefinitionBtn.style.display = isEditable ? 'inline-block' : 'none';
+            }
+
+            if (saveBtn) saveBtn.style.display = isEditable ? 'inline-block' : 'none';
+            if (editBtn) editBtn.style.display = isEditable ? 'none' : 'inline-block';
+            // Only show add button if section is editable and it exists
+            if (addBtn) addBtn.style.display = isEditable ? 'inline-block' : 'none';
+            if (cancelBtn) cancelBtn.style.display = isEditable ? 'inline-block' : 'none';
+
+            if (sectionName === 'reviews') {
+                if (!isEditable) { // If reviews section is read-only (saved)
+                    submitReviewChangesBtn.style.display = 'inline-block'; // Show "Submit Score Changes"
+                } else {
+                    submitReviewChangesBtn.style.display = 'none'; // Hide when in full edit mode
+                }
+            }
+        }
+
+        // Helper to capitalize first letter for button IDs
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        // Function to cancel edits and revert to last saved state
+        async function cancelSectionEdit(sectionName) {
+            loadCurrentPlanFromStorage(); // Reload from current storage
+            showMessageBox('Info', `${capitalizeFirstLetter(sectionName)} edits cancelled. Reverted to last saved state.`);
+            toggleSectionEditMode(sectionName, false); // Set back to read-only
+        }
+
+
+        // Predefined list of objectives for the dropdowns
+        const objectivesList = [
+            "Select an Objective",
+            "Increase Sales Revenue",
+            "Improve Customer Satisfaction",
+            "Reduce Operational Costs",
+            "Complete Project X on Time",
+            "Enhance Team Collaboration",
+            "Develop New Skills",
+            "Improve Product Quality",
+            "Streamline Workflow Efficiency"
+        ];
+
+        // Store objectives and their targets
+        let definedObjectives = {}; // This will be populated from the current plan data
+
+        // Function to add a new objective row
+        let objectiveRowCount = 0;
+        function addObjectiveRow(data = {}) {
+            objectiveRowCount++;
+            const tableBody = document.getElementById('objectivesTableBody');
+            const newRow = tableBody.insertRow();
+            newRow.id = `objectiveRow_${objectiveRowCount}`;
+
+            let objectiveOptionsHtml = objectivesList.map(objective => `<option value="${sanitizeInput(objective)}" ${data.objectiveText === objective ? 'selected' : ''}>${sanitizeInput(objective)}</option>`).join('');
+
+            newRow.innerHTML = `
+                <td>${objectiveRowCount}</td>
+                <td>
+                    <select id="objectiveSelect_${objectiveRowCount}" name="objective_${objectiveRowCount}" class="rounded-lg" required onchange="updateDefinedObjectives(); logActionToHistory('Edited Row', 'Objectives/KPIs', 'Objective selected/changed.')" ${!sectionEditStates.objectives ? 'disabled' : ''} aria-label="Objective ${objectiveRowCount}">
+                        ${objectiveOptionsHtml}
+                    </select>
+                </td>
+                <td><textarea name="targetDescription_${objectiveRowCount}" rows="2" class="rounded-lg" placeholder="e.g., Achieve 10% growth" required oninput="logActionToHistory('Edited Row', 'Objectives/KPIs', 'Target description changed.')" ${!sectionEditStates.objectives ? 'disabled' : ''} aria-label="Target Description for Objective ${objectiveRowCount}">${sanitizeInput(data.targetDescription || '')}</textarea></td>
+                <td><input type="number" id="targetValue_${objectiveRowCount}" name="targetValue_${objectiveRowCount}" class="rounded-lg target-value-input" min="0" value="${data.targetValue || 0}" required oninput="updateDefinedObjectives(); logActionToHistory('Edited Row', 'Objectives/KPIs', 'Target value changed.')" ${!sectionEditStates.objectives ? 'disabled' : ''} aria-label="Target Value for Objective ${objectiveRowCount}"></td>
+                <td>
+                    <select name="targetType_${objectiveRowCount}" class="rounded-lg target-type-select" required onchange="updateDefinedObjectives(); logActionToHistory('Edited Row', 'Objectives/KPIs', 'Target type changed.')" ${!sectionEditStates.objectives ? 'disabled' : ''} aria-label="Target Type for Objective ${objectiveRowCount}">
+                        <option value="Value" ${data.targetType === 'Value' ? 'selected' : ''}>Value</option>
+                        <option value="Volume" ${data.targetType === 'Volume' ? 'selected' : ''}>Volume</option>
+                        <option value="Percentage" ${data.targetType === 'Percentage' ? 'selected' : ''}>Percentage</option>
+                        <option value="Other" ${data.targetType === 'Other' ? 'selected' : ''}>Other</option>
+                    </select>
+                </td>
+                <td><textarea name="support_${objectiveRowCount}" rows="2" class="rounded-lg" required oninput="logActionToHistory('Edited Row', 'Objectives/KPIs', 'Support required changed.')" ${!sectionEditStates.objectives ? 'disabled' : ''} aria-label="Support Required for Objective ${objectiveRowCount}">${sanitizeInput(data.supportRequired || '')}</textarea></td>
+                <td><input type="date" name="timing_${objectiveRowCount}" class="rounded-lg" value="${data.timing || ''}" required onchange="logActionToHistory('Edited Row', 'Objectives/KPIs', 'Timing changed.')" ${!sectionEditStates.objectives ? 'disabled' : ''} aria-label="Timing for Objective ${objectiveRowCount}"></td>
+            `;
+
+            updateDefinedObjectives();
+            logActionToHistory('Added Row', 'Objectives/KPIs', `New objective row ${objectiveRowCount} added.`);
+        }
+
+        function updateDefinedObjectives() {
+            definedObjectives = {};
+            const objectiveRows = document.querySelectorAll('#objectivesTableBody tr');
+            objectiveRows.forEach(row => {
+                const rowId = row.id.split('_')[1];
+                const objectiveSelect = row.querySelector(`#objectiveSelect_${rowId}`);
+                const targetDescription = row.querySelector(`[name="targetDescription_${rowId}"]`);
+                const targetValueInput = row.querySelector(`#targetValue_${rowId}`);
+                const targetTypeSelect = row.querySelector(`[name="targetType_${rowId}"]`);
+
+                if (objectiveSelect && targetValueInput && targetTypeSelect) {
+                    const objectiveText = objectiveSelect.value;
+                    const targetDescriptionValue = targetDescription.value; // Get the description
+                    const targetValue = parseFloat(targetValueInput.value);
+                    const targetType = targetTypeSelect.value;
+
+                    if (objectiveText && objectiveText !== "Select an Objective") {
+                        definedObjectives[objectiveText] = {
+                            description: targetDescriptionValue, // Store the description
+                            targetValue: targetValue,
+                            targetType: targetType
+                        };
+                    }
+                }
+            });
+            updateReviewObjectiveDropdowns();
+            updateKpiObjectiveDropdown();
+            debouncedCalculateOverallPerformance();
+        }
+
+        function updateReviewObjectiveDropdowns() {
+            const reviewObjectiveSelects = document.querySelectorAll('.review-objective-select');
+            const newOptionsHtml = Object.keys(definedObjectives).map(obj => `<option value="${sanitizeInput(obj)}">${sanitizeInput(obj)}</option>`).join('');
+
+            reviewObjectiveSelects.forEach(select => {
+                const currentSelectedValue = select.value;
+                select.innerHTML = `<option value="">Select Objective</option>${newOptionsHtml}`;
+                if (definedObjectives[currentSelectedValue]) {
+                    select.value = currentSelectedValue;
+                }
+                // Also update the target description field when the objective changes
+                const row = select.closest('tr');
+                const targetDescriptionDisplay = row.querySelector('.review-target-description-display');
+                if (targetDescriptionDisplay) {
+                    targetDescriptionDisplay.value = definedObjectives[select.value]?.description || '';
+                }
+            });
+        }
+
+        // Function to update the "Associated Objective" dropdown in the KPI section
+        function updateKpiObjectiveDropdown() {
+            const kpiObjectiveSelect = document.getElementById('newKpiObjective');
+            if (kpiObjectiveSelect) {
+                const currentSelectedValue = kpiObjectiveSelect.value;
+                const newOptionsHtml = Object.keys(definedObjectives).map(obj => `<option value="${sanitizeInput(obj)}">${sanitizeInput(obj)}</option>`).join('');
+                kpiObjectiveSelect.innerHTML = `<option value="">Select an Objective</option>${newOptionsHtml}<option value="Other">Other (Specify)</option>`;
+                if (definedObjectives[currentSelectedValue]) {
+                    kpiObjectiveSelect.value = currentSelectedValue;
+                }
+                window.toggleOtherObjectiveInput();
+            }
+        }
+
+
+        // Function to add a new monthly review row
+        let monthlyReviewRowCount = 0;
+        function addMonthlyReviewRow(data = {}) {
+            monthlyReviewRowCount++;
+            const tableBody = document.getElementById('monthlyReviewTableBody');
+            const newRow = tableBody.insertRow();
+            newRow.id = `monthlyReviewRow_${monthlyReviewRowCount}`;
+
+            let objectiveOptionsHtml = Object.keys(definedObjectives).map(obj => `<option value="${sanitizeInput(obj)}" ${data.objectiveReviewed === obj ? 'selected' : ''}>${sanitizeInput(obj)}</option>`).join('');
+
+            // Get employee name for auto-population
+            const employeeName = document.getElementById('employeeName').value || '';
+
+            // Determine initial target description
+            const initialTargetDescription = data.objectiveReviewed ? definedObjectives[data.objectiveReviewed]?.description || '' : '';
+
+            // Disable all fields by default, enable only reviewDate and actualPerformance if in read-only mode
+            const isDisabled = !sectionEditStates.reviews;
+            const reviewDateDisabled = isDisabled ? '' : '';
+            const actualPerformanceDisabled = isDisabled ? '' : '';
+            const otherFieldsDisabled = isDisabled ? 'disabled' : '';
+
+            newRow.innerHTML = `
+                <td>${monthlyReviewRowCount}</td>
+                <td><input type="date" name="reviewDate_${monthlyReviewRowCount}" class="rounded-lg review-date-input" value="${data.reviewDate || ''}" required oninput="updateReviewScore(${monthlyReviewRowCount}); debouncedCalculateOverallPerformance(); logActionToHistory('Edited Row', 'Monthly Reviews', 'Review date changed.')" ${reviewDateDisabled} aria-label="Review Date for entry ${monthlyReviewRowCount}"></td>
+                <td>
+                    <select name="objectiveReviewed_${monthlyReviewRowCount}" class="rounded-lg review-objective-select" required onchange="updateReviewScore(${monthlyReviewRowCount}); debouncedCalculateOverallPerformance(); logActionToHistory('Edited Row', 'Monthly Reviews', 'Objective reviewed changed.')" ${otherFieldsDisabled} aria-label="Objective Reviewed for entry ${monthlyReviewRowCount}">
+                        <option value="">Select Objective</option>
+                        ${objectiveOptionsHtml}
+                    </select>
+                </td>
+                <td><textarea name="targetDescriptionDisplay_${monthlyReviewRowCount}" class="rounded-lg review-target-description-display" rows="2" readonly placeholder="Target description will appear here" ${otherFieldsDisabled}>${sanitizeInput(initialTargetDescription)}</textarea></td>
+                <td><input type="number" name="actualPerformance_${monthlyReviewRowCount}" class="rounded-lg actual-performance-input" min="0" value="${data.actualPerformance || 0}" required oninput="updateReviewScore(${monthlyReviewRowCount}); debouncedCalculateOverallPerformance(); logActionToHistory('Edited Row', 'Monthly Reviews', 'Actual performance changed.')" ${actualPerformanceDisabled} aria-label="Actual Performance for entry ${monthlyReviewRowCount}"></td>
+                <td><input type="text" name="score_${monthlyReviewRowCount}" class="rounded-lg review-score-display" readonly value="${data.score !== undefined ? data.score.toFixed(2) + '%' : '0.00%'}" aria-label="Score for entry ${monthlyReviewRowCount}"></td>
+                <td><input type="text" name="reviewerName_${monthlyReviewRowCount}" class="rounded-lg" value="${sanitizeInput(data.reviewerName || '')}" required oninput="logActionToHistory('Edited Row', 'Monthly Reviews', 'Reviewer name changed.')" ${otherFieldsDisabled} aria-label="Reviewer Name for entry ${monthlyReviewRowCount}"></td>
+                <td><input type="text" name="reviewerPosition_${monthlyReviewRowCount}" class="rounded-lg" value="${sanitizeInput(data.reviewerPosition || '')}" required oninput="logActionToHistory('Edited Row', 'Monthly Reviews', 'Reviewer position changed.')" ${otherFieldsDisabled} aria-label="Reviewer Position for entry ${monthlyReviewRowCount}"></td>
+                <td><textarea name="reviewerNotes_${monthlyReviewRowCount}" rows="2" class="rounded-lg" required oninput="logActionToHistory('Edited Row', 'Monthly Reviews', 'Reviewer notes changed.')" ${otherFieldsDisabled} aria-label="Reviewer Notes for entry ${monthlyReviewRowCount}">${sanitizeInput(data.reviewerNotes || '')}</textarea></td>
+                <td><input type="text" name="jobholderName_${monthlyReviewRowCount}" class="rounded-lg" value="${sanitizeInput(data.jobholderName || employeeName)}" required oninput="logActionToHistory('Edited Row', 'Monthly Reviews', 'Job-holder name changed.')" ${otherFieldsDisabled} aria-label="Job-holder Name for entry ${monthlyReviewRowCount}"></td>
+                <td><textarea name="jobholderComments_${monthlyReviewRowCount}" rows="2" class="rounded-lg" required oninput="logActionToHistory('Edited Row', 'Monthly Reviews', 'Job-holder comments changed.')" ${otherFieldsDisabled} aria-label="Job-holder Comments for entry ${monthlyReviewRowCount}">${sanitizeInput(data.jobholderComments || '')}</textarea></td>
+            `;
+            updateReviewObjectiveDropdowns();
+            debouncedCalculateOverallPerformance();
+            logActionToHistory('Added Row', 'Monthly Reviews', `New monthly review row ${monthlyReviewRowCount} added.`);
+        }
+
+        // Function to update job-holder name in all existing rows when employee name changes
+        function updateJobholderName() {
+            const employeeName = document.getElementById('employeeName').value;
+            document.querySelectorAll('#monthlyReviewTableBody input[name^="jobholderName_"]').forEach(input => {
+                // Only update if the field is empty or was previously auto-populated by this function
+                if (input.value === '' || input.dataset.autoPopulated === 'true') {
+                    input.value = sanitizeInput(employeeName);
+                    input.dataset.autoPopulated = 'true';
+                }
+            });
+            logActionToHistory('Edited Field', 'Employee Information', 'Employee Name changed.');
+        }
+
+
+        function updateReviewScore(rowNum) {
+            const row = document.getElementById(`monthlyReviewRow_${rowNum}`);
+            const objectiveSelect = row.querySelector(`[name="objectiveReviewed_${rowNum}"]`);
+            const actualInput = row.querySelector(`[name="actualPerformance_${rowNum}"]`);
+            const scoreDisplay = row.querySelector(`[name="score_${rowNum}"]`);
+            const targetDescriptionDisplay = row.querySelector(`[name="targetDescriptionDisplay_${rowNum}"]`); // Get the new display field
+
+            const selectedObjective = objectiveSelect.value;
+            const actual = parseFloat(actualInput.value);
+
+            let individualScore = 0;
+            if (definedObjectives[selectedObjective] && definedObjectives[selectedObjective].targetValue > 0) {
+                const target = definedObjectives[selectedObjective].targetValue;
+                individualScore = (actual / target) * 100;
+                if (individualScore > 100) individualScore = 100;
+            }
+            scoreDisplay.value = `${individualScore.toFixed(2)}%`;
+
+            // Update target description display
+            if (targetDescriptionDisplay) {
+                targetDescriptionDisplay.value = definedObjectives[selectedObjective]?.description || '';
+            }
+        }
+
+        // Debounced version of calculateOverallPerformance
+        const debouncedCalculateOverallPerformance = debounce(calculateOverallPerformance, 300);
+
+        function calculateOverallPerformance() {
+            const monthlyReviewRows = document.querySelectorAll('#monthlyReviewTableBody tr');
+            const latestScoresPerObjective = {};
+
+            monthlyReviewRows.forEach(row => {
+                const reviewDateInput = row.querySelector('[name^="reviewDate_"]');
+                const objectiveSelect = row.querySelector('[name^="objectiveReviewed_"]');
+                const scoreDisplay = row.querySelector('[name^="score_"]');
+
+                const reviewDate = reviewDateInput ? new Date(reviewDateInput.value) : null;
+                const objectiveName = objectiveSelect ? objectiveSelect.value : '';
+                const score = parseFloat(scoreDisplay.value) || 0;
+
+                if (objectiveName && reviewDate && !isNaN(score)) {
+                    if (!latestScoresPerObjective[objectiveName] || reviewDate > latestScoresPerObjective[objectiveName].date) {
+                        latestScoresPerObjective[objectiveName] = { date: reviewDate, score: score };
+                    }
+                }
+            });
+
+            let totalScore = 0;
+            let objectivesCount = 0;
+            for (const objName in latestScoresPerObjective) {
+                totalScore += latestScoresPerObjective[objName].score;
+                objectivesCount++;
+            }
+
+            let averageScore = 0;
+            if (objectivesCount > 0) {
+                averageScore = totalScore / objectivesCount;
+            }
+
+            document.getElementById('overallScoreDisplay').innerText = `${averageScore.toFixed(2)}%`;
+
+            // Update dynamic performance category display
+            const performanceCategoryDisplay = document.getElementById('performanceCategoryDisplay');
+            const performanceCategoryTitle = document.getElementById('performanceCategoryTitle');
+            const performanceCategoryDescription = document.getElementById('performanceCategoryDescription');
+
+            // Reset classes
+            performanceCategoryDisplay.className = 'performance-category-display';
+
+            if (averageScore >= 82) {
+                performanceCategoryDisplay.classList.add('category-excellent');
+                performanceCategoryTitle.innerText = 'EXCELLENT (82% & Above)';
+                performanceCategoryDescription.innerText = 'Level of performance in all areas is consistently commendable. A role model for his/her peers.';
+            } else if (averageScore >= 67 && averageScore < 82) {
+                performanceCategoryDisplay.classList.add('category-good');
+                performanceCategoryTitle.innerText = 'GOOD (67% to less than 82%)';
+                performanceCategoryDescription.innerText = 'Performance is generally commendable and may have displayed instances of excellence.';
+            } else if (averageScore >= 50 && averageScore < 67) {
+                performanceCategoryDisplay.classList.add('category-satisfactory');
+                performanceCategoryTitle.innerText = 'SATISFACTORY (50% to less than 67%)';
+                performanceCategoryDescription.innerText = 'Performance is generally acceptable.';
+            } else if (objectivesCount > 0) { // Only show unacceptable if there's actual data
+                performanceCategoryDisplay.classList.add('category-unacceptable');
+                performanceCategoryTitle.innerText = 'UNACCEPTABLE (Below 50%)';
+                performanceCategoryDescription.innerText = 'Performance is inadequate. Corrective action is mandatory.';
+            } else { // No data entered yet
+                performanceCategoryDisplay.classList.add('category-na');
+                performanceCategoryTitle.innerText = 'N/A';
+                performanceCategoryDescription.innerText = 'Enter performance data to calculate the overall assessment.';
+            }
+        }
+
+        // Function to add a new discussion entry row
+        let discussionEntryRowCount = 0;
+        function addDiscussionEntryRow(data = {}) {
+            discussionEntryRowCount++;
+            const tableBody = document.getElementById('discussionLogTableBody');
+            const newRow = tableBody.insertRow();
+
+            const isDisabled = !sectionEditStates.discussions;
+
+            newRow.innerHTML = `
+                <td>${discussionEntryRowCount}</td>
+                <td><input type="date" name="discussionDate_${discussionEntryRowCount}" class="rounded-lg" value="${data.discussionDate || ''}" required onchange="logActionToHistory('Edited Row', 'Discussion Log', 'Discussion date changed.')" ${isDisabled ? 'disabled' : ''} aria-label="Discussion Date for entry ${discussionEntryRowCount}"></td>
+                <td>
+                    <select name="discussedBy_${discussionEntryRowCount}" class="rounded-lg" required onchange="logActionToHistory('Edited Row', 'Discussion Log', 'Discussed by changed.')" ${isDisabled ? 'disabled' : ''} aria-label="Discussed By for entry ${discussionEntryRowCount}">
+                        <option value="" ${data.discussedBy === '' ? 'selected' : ''}>Select</option>
+                        <option value="Employer" ${data.discussedBy === 'Employer' ? 'selected' : ''}>Employer</option>
+                        <option value="Employee" ${data.discussedBy === 'Employee' ? 'selected' : ''}>Employee</option>
+                        <option value="Both" ${data.discussedBy === 'Both' ? 'selected' : ''}>Both</option>
+                    </select>
+                </td>
+                <td><input type="text" name="discussionTopic_${discussionEntryRowCount}" class="rounded-lg" value="${sanitizeInput(data.topic || '')}" required oninput="logActionToHistory('Edited Row', 'Discussion Log', 'Discussion topic changed.')" ${isDisabled ? 'disabled' : ''} aria-label="Discussion Topic for entry ${discussionEntryRowCount}"></td>
+                <td><textarea name="discussionNotes_${discussionEntryRowCount}" rows="2" class="rounded-lg" required oninput="logActionToHistory('Edited Row', 'Discussion Log', 'Discussion notes changed.')" ${isDisabled ? 'disabled' : ''} aria-label="Discussion Notes for entry ${discussionEntryRowCount}">${sanitizeInput(data.notes || '')}</textarea></td>
+            `;
+            logActionToHistory('Added Row', 'Discussion Log', `New discussion entry row ${discussionEntryRowCount} added.`);
+        }
+
+        // --- Persistence Storage (Session vs Local) ---
+        // Default to localStorage for persistence across sessions
+        let useLocalStorageFlag = true;
+
+        function getStorage() {
+            return useLocalStorageFlag ? localStorage : sessionStorage;
+        }
+
+        // This function is now only for internal logic, not exposed via UI
+        function togglePersistenceStorage() {
+            // This function is no longer triggered by UI, but its logic is used internally
+            // to set the initial storage type based on the flag.
+            // The UI checkbox for this has been removed.
+            const currentStorageInfo = document.getElementById('currentStorageInfo');
+            if (currentStorageInfo) { // Check if element exists before manipulating
+                if (useLocalStorageFlag) {
+                    currentStorageInfo.innerText = "Currently using Local Storage (data persists across sessions).";
+                } else {
+                    currentStorageInfo.innerText = "Currently using Session Storage (data clears when browser tab closes).";
+                }
+            }
+        }
+
+        // --- Current Plan Data Handling ---
+        let currentPlanData = {}; // Global object to hold the current plan state
+
+        function saveCurrentPlanToStorage() {
+            currentPlanData = {
+                employeeInfo: {
+                    employeeName: document.getElementById('employeeName').value,
+                    employeeDepartment: document.getElementById('employeeDepartment').value,
+                    employeePosition: document.getElementById('employeePosition').value,
+                    dateJoinedCompany: document.getElementById('dateJoinedCompany').value,
+                    contactNumber: document.getElementById('contactNumber').value,
+                    contactType: document.getElementById('contactType').value,
+                    reportingManagerName: document.getElementById('reportingManagerName').value,
+                    reportingManagerPosition: document.getElementById('reportingManagerPosition').value,
+                    startDate: document.getElementById('startDate').value,
+                    finalReviewDate: document.getElementById('finalReviewDate').value,
+                },
+                signatures: {
+                    employeeSignatureName: document.getElementById('employeeSignatureName').value,
+                    employeeSignatureDate: document.getElementById('employeeSignatureDate').value,
+                    reportingManagerSignatureName: document.getElementById('reportingManagerSignatureName').value,
+                    reportingManagerSignatureDate: document.getElementById('reportingManagerSignatureDate').value,
+                    hrSignatureName: document.getElementById('hrSignatureName').value,
+                    hrSignatureDate: document.getElementById('hrSignatureDate').value,
+                },
+                objectives: [],
+                monthlyReviews: [],
+                discussionLog: [],
+                kpiTracking: [],
+                developmentPlan: {
+                    goals: [],
+                    skillsGap: [],
+                    actionPlan: [],
+                    evaluationFeedback: []
+                },
+                overallAssessment: {
+                    score: document.getElementById('overallScoreDisplay').innerText,
+                    category: document.getElementById('performanceCategoryTitle').innerText,
+                    consequences: document.getElementById('consequences').value,
+                    outcomeConfirmation: document.querySelector('input[name="outcomeConfirmation"]:checked')?.value || ''
+                },
+                lastUpdated: new Date().toISOString()
+            };
+
+            document.querySelectorAll('#objectivesTableBody tr').forEach(row => {
+                const objectiveText = row.querySelector('select[name^="objective_"]').value;
+                const targetDescription = row.querySelector('textarea[name^="targetDescription_"]').value;
+                const targetValue = parseFloat(row.querySelector('input[name^="targetValue_"]').value);
+                const targetType = row.querySelector('select[name^="targetType_"]').value;
+                const supportRequired = row.querySelector('textarea[name^="support_"]').value;
+                const timing = row.querySelector('input[name^="timing_"]').value;
+
+                if (objectiveText && objectiveText !== "Select an Objective" && targetDescription && !isNaN(targetValue) && targetType) {
+                    currentPlanData.objectives.push({
+                        objectiveText: sanitizeInput(objectiveText),
+                        targetDescription: sanitizeInput(targetDescription),
+                        targetValue: targetValue,
+                        targetType: sanitizeInput(targetType),
+                        supportRequired: sanitizeInput(supportRequired),
+                        timing: sanitizeInput(timing)
+                    });
+                }
+            });
+
+            document.querySelectorAll('#monthlyReviewTableBody tr').forEach(row => {
+                const reviewDate = row.querySelector('input[name^="reviewDate_"]').value;
+                const objectiveReviewed = row.querySelector('select[name^="objectiveReviewed_"]').value;
+                const actualPerformance = parseFloat(row.querySelector('input[name^="actualPerformance_"]').value);
+                const score = parseFloat(row.querySelector('input[name^="score_"]').value);
+                const reviewerName = row.querySelector('input[name^="reviewerName_"]').value;
+                const reviewerPosition = row.querySelector('input[name^="reviewerPosition_"]').value;
+                const reviewerNotes = row.querySelector('textarea[name^="reviewerNotes_"]').value;
+                const jobholderName = row.querySelector('input[name^="jobholderName_"]').value;
+                const jobholderComments = row.querySelector('textarea[name^="jobholderComments_"]').value;
+
+                if (reviewDate && objectiveReviewed && !isNaN(actualPerformance)) {
+                    currentPlanData.monthlyReviews.push({
+                        reviewDate: sanitizeInput(reviewDate),
+                        objectiveReviewed: sanitizeInput(objectiveReviewed),
+                        actualPerformance: actualPerformance,
+                        score: score,
+                        reviewerName: sanitizeInput(reviewerName),
+                        reviewerPosition: sanitizeInput(reviewerPosition),
+                        reviewerNotes: sanitizeInput(reviewerNotes),
+                        jobholderName: sanitizeInput(jobholderName),
+                        jobholderComments: sanitizeInput(jobholderComments)
+                    });
+                }
+            });
+
+            document.querySelectorAll('#discussionLogTableBody tr').forEach(row => {
+                const discussionDate = row.querySelector('input[name^="discussionDate_"]').value;
+                const discussedBy = row.querySelector('select[name^="discussedBy_"]').value;
+                const discussionTopic = row.querySelector('input[name^="discussionTopic_"]').value;
+                const discussionNotes = row.querySelector('textarea[name^="discussionNotes_"]').value;
+
+                if (discussionDate && discussedBy && discussionTopic && discussionNotes) {
+                    currentPlanData.discussionLog.push({
+                        discussionDate: sanitizeInput(discussionDate),
+                        discussedBy: sanitizeInput(discussedBy),
+                        topic: sanitizeInput(discussionTopic),
+                        notes: sanitizeInput(discussionNotes)
+                    });
+                }
+            });
+
+            // Save KPI Tracking data
+            const kpiCards = document.querySelectorAll('.kpi-definition-card[data-kpi-id]');
+            kpiCards.forEach(card => {
+                const kpiId = card.dataset.kpiId;
+                const kpiNameSelect = card.querySelector(`[data-kpi-field="kpiNameSelect"]`);
+                const kpiNameOther = card.querySelector(`[data-kpi-field="kpiNameOther"]`);
+                const kpiName = kpiNameSelect.value === 'Other' ? kpiNameOther.value : kpiNameSelect.value;
+
+                const associatedObjectiveSelect = card.querySelector(`[data-kpi-field="associatedObjectiveSelect"]`);
+                const associatedObjectiveOther = card.querySelector(`[data-kpi-field="associatedObjectiveOther"]`);
+                const associatedObjective = associatedObjectiveSelect.value === 'Other' ? associatedObjectiveOther.value : associatedObjectiveSelect.value;
+
+                const acknowledgement = card.querySelector(`[data-kpi-field="acknowledgement"]`).checked;
+                const targetPeriodType = card.querySelector(`[data-kpi-field="targetPeriodType"]`).value;
+                const targetValue = parseFloat(card.querySelector(`[data-kpi-field="targetValue"]`).value);
+                const targetStartDate = card.querySelector(`[data-kpi-field="targetStartDate"]`).value;
+                const targetEndDate = card.querySelector(`[data-kpi-field="targetEndDate"]`).value;
+                const updateFrequency = card.querySelector(`[data-kpi-field="updateFrequency"]`).value;
+
+                const performanceData = [];
+                card.querySelectorAll('.kpi-performance-row').forEach(row => {
+                    const msisdn = row.querySelector('[data-performance-field="msisdn"]').value;
+                    const name = row.querySelector('[data-performance-field="name"]').value;
+                    const comment = row.querySelector('[data-performance-field="comment"]').value;
+                    const dailyValues = {};
+                    row.querySelectorAll('input[data-date]').forEach(input => {
+                        dailyValues[input.dataset.date] = parseFloat(input.value) || 0;
+                    });
+                    performanceData.push({
+                        msisdn: sanitizeInput(msisdn),
+                        name: sanitizeInput(name),
+                        comment: sanitizeInput(comment),
+                        dailyValues: dailyValues
+                    });
+                });
+
+                currentPlanData.kpiTracking.push({
+                    id: kpiId,
+                    kpiName: sanitizeInput(kpiName),
+                    kpiNameSelectValue: sanitizeInput(kpiNameSelect.value),
+                    kpiNameOtherValue: sanitizeInput(kpiNameOther.value),
+                    associatedObjective: sanitizeInput(associatedObjective),
+                    associatedObjectiveSelectValue: sanitizeInput(associatedObjectiveSelect.value),
+                    associatedObjectiveOtherValue: sanitizeInput(associatedObjectiveOther.value),
+                    acknowledgement: acknowledgement,
+                    targetPeriodType: sanitizeInput(targetPeriodType),
+                    targetValue: targetValue,
+                    targetStartDate: sanitizeInput(targetStartDate),
+                    targetEndDate: sanitizeInput(targetEndDate),
+                    updateFrequency: sanitizeInput(updateFrequency),
+                    performanceData: performanceData
+                });
+            });
+
+            // Save Development Plan data
+            document.querySelectorAll('#developmentGoalsTableBody tr').forEach(row => {
+                const goalDescription = row.querySelector('textarea[name^="goalDescription_"]').value;
+                const targetMetric = row.querySelector('input[name^="targetMetric_"]').value;
+                const timeline = row.querySelector('input[name^="timeline_"]').value;
+                const acknowledged = row.querySelector('input[name^="acknowledged_"]').checked;
+                currentPlanData.developmentPlan.goals.push({
+                    goalDescription: sanitizeInput(goalDescription),
+                    targetMetric: sanitizeInput(targetMetric),
+                    timeline: sanitizeInput(timeline),
+                    acknowledged: acknowledged
+                });
+            });
+
+            document.querySelectorAll('#skillsGapTableBody tr').forEach(row => {
+                const skillArea = row.querySelector('input[name^="skillArea_"]').value;
+                const currentLevel = row.querySelector('input[name^="currentLevel_"]').value;
+                const desiredLevel = row.querySelector('input[name^="desiredLevel_"]').value;
+                const gapDescription = row.querySelector('textarea[name^="gapDescription_"]').value;
+                currentPlanData.developmentPlan.skillsGap.push({
+                    skillArea: sanitizeInput(skillArea),
+                    currentLevel: sanitizeInput(currentLevel),
+                    desiredLevel: sanitizeInput(desiredLevel),
+                    gapDescription: sanitizeInput(gapDescription)
+                });
+            });
+
+            document.querySelectorAll('#actionPlanTableBody tr').forEach(row => {
+                const activity = row.querySelector('textarea[name^="activity_"]').value;
+                const startDate = row.querySelector('input[name^="actionStartDate_"]').value;
+                const endDate = row.querySelector('input[name^="actionEndDate_"]').value;
+                const status = row.querySelector('select[name^="status_"]').value;
+                const resourcesNeeded = row.querySelector('textarea[name^="resourcesNeeded_"]').value;
+                currentPlanData.developmentPlan.actionPlan.push({
+                    activity: sanitizeInput(activity),
+                    startDate: sanitizeInput(startDate),
+                    endDate: sanitizeInput(endDate),
+                    status: sanitizeInput(status),
+                    resourcesNeeded: sanitizeInput(resourcesNeeded)
+                });
+            });
+
+            document.querySelectorAll('#evaluationFeedbackTableBody tr').forEach(row => {
+                const date = row.querySelector('input[name^="evalDate_"]').value;
+                const evaluator = row.querySelector('input[name^="evaluator_"]').value;
+                const notesFeedback = row.querySelector('textarea[name^="notesFeedback_"]').value;
+                const nextSteps = row.querySelector('textarea[name^="nextSteps_"]').value;
+                currentPlanData.developmentPlan.evaluationFeedback.push({
+                    date: sanitizeInput(date),
+                    evaluator: sanitizeInput(evaluator),
+                    notesFeedback: sanitizeInput(notesFeedback),
+                    nextSteps: sanitizeInput(nextSteps)
+                });
+            });
+
+
+            getStorage().setItem('currentPerformancePlan', JSON.stringify(currentPlanData));
+            console.log("Current plan saved to storage.");
+        }
+
+        function loadCurrentPlanFromStorage() {
+            const storedData = getStorage().getItem('currentPerformancePlan');
+            if (storedData) {
+                currentPlanData = JSON.parse(storedData);
+                console.log("Loading current plan from storage:", currentPlanData);
+
+                // Populate Employee Information
+                document.getElementById('employeeName').value = sanitizeInput(currentPlanData.employeeInfo?.employeeName || '');
+                document.getElementById('employeeDepartment').value = sanitizeInput(currentPlanData.employeeInfo?.employeeDepartment || '');
+                document.getElementById('employeePosition').value = sanitizeInput(currentPlanData.employeeInfo?.employeePosition || '');
+                document.getElementById('dateJoinedCompany').value = sanitizeInput(currentPlanData.employeeInfo?.dateJoinedCompany || '');
+                document.getElementById('contactNumber').value = sanitizeInput(currentPlanData.employeeInfo?.contactNumber || '');
+                document.getElementById('contactType').value = sanitizeInput(currentPlanData.employeeInfo?.contactType || '');
+                document.getElementById('reportingManagerName').value = sanitizeInput(currentPlanData.employeeInfo?.reportingManagerName || '');
+                document.getElementById('reportingManagerPosition').value = sanitizeInput(currentPlanData.employeeInfo?.reportingManagerPosition || '');
+                document.getElementById('startDate').value = sanitizeInput(currentPlanData.employeeInfo?.startDate || '');
+                document.getElementById('finalReviewDate').value = sanitizeInput(currentPlanData.employeeInfo?.finalReviewDate || '');
+
+                // Populate Signatures
+                document.getElementById('employeeSignatureName').value = sanitizeInput(currentPlanData.signatures?.employeeSignatureName || '');
+                document.getElementById('employeeSignatureDate').value = sanitizeInput(currentPlanData.signatures?.employeeSignatureDate || '');
+                document.getElementById('reportingManagerSignatureName').value = sanitizeInput(currentPlanData.signatures?.reportingManagerSignatureName || '');
+                document.getElementById('reportingManagerSignatureDate').value = sanitizeInput(currentPlanData.signatures?.reportingManagerSignatureDate || '');
+                document.getElementById('hrSignatureName').value = sanitizeInput(currentPlanData.signatures?.hrSignatureName || '');
+                document.getElementById('hrSignatureDate').value = sanitizeInput(currentPlanData.signatures?.hrSignatureDate || '');
+
+                // Populate Overall Assessment (new fields)
+                document.getElementById('consequences').value = sanitizeInput(currentPlanData.overallAssessment?.consequences || '');
+                const outcomeRadio = document.querySelector(`input[name="outcomeConfirmation"][value="${currentPlanData.overallAssessment?.outcomeConfirmation}"]`);
+                if (outcomeRadio) outcomeRadio.checked = true;
+
+
+                // Clear existing dynamic rows before populating
+                document.getElementById('objectivesTableBody').innerHTML = '';
+                document.getElementById('monthlyReviewTableBody').innerHTML = '';
+                document.getElementById('discussionLogTableBody').innerHTML = '';
+                document.getElementById('definedKpisContainer').innerHTML = '';
+                document.getElementById('developmentGoalsTableBody').innerHTML = '';
+                document.getElementById('skillsGapTableBody').innerHTML = '';
+                document.getElementById('actionPlanTableBody').innerHTML = '';
+                document.getElementById('evaluationFeedbackTableBody').innerHTML = '';
+
+
+                // Populate Objectives
+                objectiveRowCount = 0;
+                if (currentPlanData.objectives && currentPlanData.objectives.length > 0) {
+                    currentPlanData.objectives.forEach(objData => addObjectiveRow(objData));
+                } else {
+                    addObjectiveRow();
+                }
+
+                // Populate Monthly Reviews
+                monthlyReviewRowCount = 0;
+                if (currentPlanData.monthlyReviews && currentPlanData.monthlyReviews.length > 0) {
+                    currentPlanData.monthlyReviews.forEach(reviewData => addMonthlyReviewRow(reviewData));
+                } else {
+                    addMonthlyReviewRow();
+                }
+
+                // Populate Discussion Log
+                discussionEntryRowCount = 0;
+                if (currentPlanData.discussionLog && currentPlanData.discussionLog.length > 0) {
+                    currentPlanData.discussionLog.forEach(discData => addDiscussionEntryRow(discData));
+                } else {
+                    addDiscussionEntryRow();
+                }
+
+                // Populate KPI Tracking
+                if (currentPlanData.kpiTracking && currentPlanData.kpiTracking.length > 0) {
+                    currentPlanData.kpiTracking.forEach(kpiData => addKpiDefinitionCard(kpiData));
+                } else {
+                    document.getElementById('noKpisMessage').style.display = 'block';
+                }
+
+                // Populate Development Plan
+                if (currentPlanData.developmentPlan) {
+                    if (currentPlanData.developmentPlan.goals && currentPlanData.developmentPlan.goals.length > 0) {
+                        currentPlanData.developmentPlan.goals.forEach(goalData => window.addDevelopmentGoalRow(goalData));
+                    } else {
+                        window.addDevelopmentGoalRow();
+                    }
+                    if (currentPlanData.developmentPlan.skillsGap && currentPlanData.developmentPlan.skillsGap.length > 0) {
+                        currentPlanData.developmentPlan.skillsGap.forEach(sgData => window.addSkillsGapRow(sgData));
+                    } else {
+                        window.addSkillsGapRow();
+                    }
+                    if (currentPlanData.developmentPlan.actionPlan && currentPlanData.developmentPlan.actionPlan.length > 0) {
+                        currentPlanData.developmentPlan.actionPlan.forEach(apData => window.addActionPlanRow(apData));
+                    } else {
+                        window.addActionPlanRow();
+                    }
+                    if (currentPlanData.developmentPlan.evaluationFeedback && currentPlanData.developmentPlan.evaluationFeedback.length > 0) {
+                        currentPlanData.developmentPlan.evaluationFeedback.forEach(efData => window.addEvaluationFeedbackRow(efData));
+                    } else {
+                        window.addEvaluationFeedbackRow();
+                    }
+                } else {
+                    window.addDevelopmentGoalRow();
+                    window.addSkillsGapRow();
+                    window.addActionPlanRow();
+                    window.addEvaluationFeedbackRow();
+                }
+
+
+                calculateOverallPerformance();
+
+            } else {
+                console.log("No current plan found in storage. Starting with a blank form.");
+                addObjectiveRow();
+                addMonthlyReviewRow();
+                addDiscussionEntryRow();
+                document.getElementById('noKpisMessage').style.display = 'block';
+                window.addDevelopmentGoalRow();
+                window.addSkillsGapRow();
+                window.addActionPlanRow();
+                window.addEvaluationFeedbackRow();
+            }
+
+            // Hide loading overlay and show main container
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const mainContainer = document.getElementById('mainContainer');
+            if (loadingOverlay) loadingOverlay.style.opacity = '0';
+            if (mainContainer) mainContainer.classList.add('loaded');
+            setTimeout(() => {
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+            }, 100); /* Faster fade-out */
+        }
+
+        // --- Validation Functions ---
+        function validateFormSection(sectionName) {
+            let isValid = true;
+            let errorMessage = '';
+
+            if (sectionName === 'employeeInfo') {
+                const employeeName = document.getElementById('employeeName').value;
+                const employeeDepartment = document.getElementById('employeeDepartment').value;
+                const employeePosition = document.getElementById('employeePosition').value;
+                const dateJoinedCompany = document.getElementById('dateJoinedCompany').value;
+                const contactNumber = document.getElementById('contactNumber').value;
+                const contactType = document.getElementById('contactType').value;
+                const reportingManagerName = document.getElementById('reportingManagerName').value;
+                const reportingManagerPosition = document.getElementById('reportingManagerPosition').value;
+                const startDate = document.getElementById('startDate').value;
+                const finalReviewDate = document.getElementById('finalReviewDate').value;
+
+
+                if (!employeeName) errorMessage += 'Employee Name is required.\n';
+                if (!employeeDepartment) errorMessage += 'Department is required.\n';
+                if (!employeePosition) errorMessage += 'Position is required.\n';
+                if (!dateJoinedCompany) errorMessage += 'Date Joined Company is required.\n';
+                if (!contactNumber) errorMessage += 'Contact Number/Email is required.\n';
+                if (!contactType) errorMessage += 'Contact Type is required.\n';
+                if (!reportingManagerName) errorMessage += 'Reporting Manager Name is required.\n';
+                if (!reportingManagerPosition) errorMessage += 'Manager Position is required.\n';
+                if (!startDate) errorMessage += 'PIP Start Date is required.\n';
+                if (!finalReviewDate) errorMessage += 'PIP Final Review Date is required.\n';
+
+
+                if (startDate && finalReviewDate && new Date(startDate) > new Date(finalReviewDate)) {
+                    errorMessage += 'PIP Start Date cannot be after PIP Final Review Date.\n';
+                }
+
+            } else if (sectionName === 'signatures') {
+                const sigNames = ['employeeSignatureName', 'reportingManagerSignatureName', 'hrSignatureName'];
+                const sigDates = ['employeeSignatureDate', 'reportingManagerSignatureDate', 'hrSignatureDate'];
+
+                sigNames.forEach(id => {
+                    if (!document.getElementById(id).value) errorMessage += `${document.querySelector(`label[for="${id}"]`).innerText.replace(' (Signature):', '')} is required.\n`;
+                });
+                sigDates.forEach(id => {
+                    if (!document.getElementById(id).value) errorMessage += `${document.querySelector(`label[for="${id}"]`).innerText.replace('Date:', '')} Date is required.\n`;
+                });
+
+            } else if (sectionName === 'objectives') {
+                const objectiveRows = document.querySelectorAll('#objectivesTableBody tr');
+                if (objectiveRows.length === 0) {
+                    errorMessage += 'At least one Objective is required.\n';
+                }
+                objectiveRows.forEach((row, index) => {
+                    const objSelect = row.querySelector('select[name^="objective_"]');
+                    const targetDesc = row.querySelector('textarea[name^="targetDescription_"]');
+                    const targetVal = row.querySelector('input[name^="targetValue_"]');
+                    const targetType = row.querySelector('select[name^="targetType_"]');
+                    const support = row.querySelector('textarea[name^="support_"]');
+                    const timing = row.querySelector('input[name^="timing_"]');
+
+                    if (!objSelect.value || objSelect.value === "Select an Objective") errorMessage += `Objective ${index + 1}: Objective/KPI is required.\n`;
+                    if (!targetDesc.value) errorMessage += `Objective ${index + 1}: Target Description is required.\n`;
+                    if (isNaN(parseFloat(targetVal.value)) || parseFloat(targetVal.value) < 0) errorMessage += `Objective ${index + 1}: Target Value must be a non-negative number.\n`;
+                    if (!targetType.value) errorMessage += `Objective ${index + 1}: Target Type is required.\n`;
+                    if (!support.value) errorMessage += `Objective ${index + 1}: Support Required is required.\n`;
+                    if (!timing.value) errorMessage += `Objective ${index + 1}: Timing is required.\n`;
+                });
+            } else if (sectionName === 'reviews') {
+                const reviewRows = document.querySelectorAll('#monthlyReviewTableBody tr');
+                if (reviewRows.length === 0) {
+                    errorMessage += 'At least one Monthly Review Record is required.\n';
+                }
+                reviewRows.forEach((row, index) => {
+                    const reviewDate = row.querySelector('input[name^="reviewDate_"]');
+                    const objectiveReviewed = row.querySelector('select[name^="objectiveReviewed_"]');
+                    const actualPerformance = row.querySelector('input[name^="actualPerformance_"]');
+                    const reviewerName = row.querySelector('input[name^="reviewerName_"]');
+                    const reviewerPosition = row.querySelector('input[name^="reviewerPosition_"]');
+                    const reviewerNotes = row.querySelector('textarea[name^="reviewerNotes_"]');
+                    const jobholderName = row.querySelector('input[name^="jobholderName_"]');
+                    const jobholderComments = row.querySelector('textarea[name^="jobholderComments_"]');
+
+                    if (!reviewDate.value) errorMessage += `Review ${index + 1}: Review Date is required.\n`;
+                    if (!objectiveReviewed.value || objectiveReviewed.value === "Select Objective") errorMessage += `Review ${index + 1}: Objective Reviewed is required.\n`;
+                    if (isNaN(parseFloat(actualPerformance.value)) || parseFloat(actualPerformance.value) < 0) errorMessage += `Review ${index + 1}: Actual Performance must be a non-negative number.\n`;
+                    if (!reviewerName.value) errorMessage += `Review ${index + 1}: Reviewer Name is required.\n`;
+                    if (!reviewerPosition.value) errorMessage += `Review ${index + 1}: Reviewer Position/Rank is required.\n`;
+                    if (!reviewerNotes.value) errorMessage += `Review ${index + 1}: Reviewer Notes are required.\n`;
+                    if (!jobholderName.value) errorMessage += `Review ${index + 1}: Job-holder Name is required.\n`;
+                    if (!jobholderComments.value) errorMessage += `Review ${index + 1}: Job-holder Comments are required.\n`;
+                });
+            } else if (sectionName === 'discussions') {
+                const discussionRows = document.querySelectorAll('#discussionLogTableBody tr');
+                if (discussionRows.length === 0) {
+                    errorMessage += 'At least one Discussion Log entry is required.\n';
+                }
+                discussionRows.forEach((row, index) => {
+                    const discDate = row.querySelector('input[name^="discussionDate_"]');
+                    const discBy = row.querySelector('select[name^="discussedBy_"]');
+                    const discTopic = row.querySelector('input[name^="discussionTopic_"]');
+                    const discNotes = row.querySelector('textarea[name^="discussionNotes_"]');
+
+                    if (!discDate.value) errorMessage += `Discussion ${index + 1}: Date is required.\n`;
+                    if (!discBy.value || discBy.value === "") errorMessage += `Discussion ${index + 1}: Discussed By is required.\n`;
+                    if (!discTopic.value) errorMessage += `Discussion ${index + 1}: Topic is required.\n`;
+                    if (!discNotes.value) errorMessage += `Discussion ${index + 1}: Notes/Agreed Actions are required.\n`;
+                });
+            } else if (sectionName === 'overallAssessment') {
+                const consequences = document.getElementById('consequences').value;
+                const outcomeConfirmation = document.querySelector('input[name="outcomeConfirmation"]:checked');
+
+                if (!consequences) errorMessage += 'Potential Consequences is required.\n';
+                if (!outcomeConfirmation) errorMessage += 'Outcome Confirmation is required.\n';
+
+            } else if (sectionName === 'kpiTracking') {
+                const kpiCards = document.querySelectorAll('.kpi-definition-card[data-kpi-id]');
+                if (kpiCards.length === 0) {
+                    errorMessage += 'At least one KPI must be defined.\n';
+                }
+                kpiCards.forEach((card, kpiIndex) => {
+                    const kpiNameSelect = card.querySelector(`[data-kpi-field="kpiNameSelect"]`);
+                    const kpiNameOther = card.querySelector(`[data-kpi-field="kpiNameOther"]`);
+                    const kpiName = kpiNameSelect.value === 'Other' ? kpiNameOther.value : kpiNameSelect.value;
+
+                    const associatedObjectiveSelect = card.querySelector(`[data-kpi-field="associatedObjectiveSelect"]`);
+                    const associatedObjectiveOther = card.querySelector(`[data-kpi-field="associatedObjectiveOther"]`);
+                    const associatedObjective = associatedObjectiveSelect.value === 'Other' ? associatedObjectiveOther.value : associatedObjectiveSelect.value;
+
+                    const targetValue = parseFloat(card.querySelector(`[data-kpi-field="targetValue"]`).value);
+                    const targetStartDate = card.querySelector(`[data-kpi-field="targetStartDate"]`).value;
+                    const targetEndDate = card.querySelector(`[data-kpi-field="targetEndDate"]`).value;
+                    const updateFrequency = card.querySelector(`[data-kpi-field="updateFrequency"]`).value;
+
+                    if (!kpiName) errorMessage += `KPI ${kpiIndex + 1}: KPI Name is required.\n`;
+                    if (kpiNameSelect.value === 'Other' && !kpiNameOther.value) errorMessage += `KPI ${kpiIndex + 1}: Custom KPI Name is required when 'Other' is selected.\n`;
+
+                    if (!associatedObjective) errorMessage += `KPI ${kpiIndex + 1}: Associated Objective is required.\n`;
+                    if (associatedObjectiveSelect.value === 'Other' && !associatedObjectiveOther.value) errorMessage += `KPI ${kpiIndex + 1}: Custom Associated Objective is required when 'Other' is selected.\n`;
+
+                    if (isNaN(targetValue) || targetValue < 0) errorMessage += `KPI ${kpiIndex + 1}: Target Value must be a non-negative number.\n`;
+                    if (!targetStartDate) errorMessage += `KPI ${kpiIndex + 1}: Target Start Date is required.\n`;
+                    if (!targetEndDate) errorMessage += `KPI ${kpiIndex + 1}: Target End Date is required.\n`;
+                    if (targetStartDate && targetEndDate && new Date(targetStartDate) > new Date(targetEndDate)) {
+                        errorMessage += `KPI ${kpiIndex + 1}: Target Start Date cannot be after Target End Date.\n`;
+                    }
+                    if (!updateFrequency) errorMessage += `KPI ${kpiIndex + 1}: Update Frequency is required.\n`;
+
+                    const performanceRows = card.querySelectorAll('.kpi-performance-row');
+                    if (performanceRows.length === 0) {
+                        errorMessage += `KPI ${kpiIndex + 1}: At least one performance entry (Msisdn/Name) is required.\n`;
+                    }
+                    performanceRows.forEach((row, rowIndex) => {
+                        const msisdn = row.querySelector('[data-performance-field="msisdn"]').value;
+                        const name = row.querySelector('[data-performance-field="name"]').value;
+                        if (!msisdn && !name) errorMessage += `KPI ${kpiIndex + 1}, Entry ${rowIndex + 1}: Msisdn or Name is required.\n`;
+                    });
+                });
+            } else if (sectionName === 'developmentGoals') {
+                const goalRows = document.querySelectorAll('#developmentGoalsTableBody tr');
+                if (goalRows.length === 0) {
+                    errorMessage += 'At least one Development Goal is required.\n';
+                }
+                goalRows.forEach((row, index) => {
+                    const goalDescription = row.querySelector('textarea[name^="goalDescription_"]');
+                    const targetMetric = row.querySelector('input[name^="targetMetric_"]');
+                    const timeline = row.querySelector('input[name^="timeline_"]');
+                    if (!goalDescription.value) errorMessage += `Development Goal ${index + 1}: Goal Description is required.\n`;
+                    if (!targetMetric.value) errorMessage += `Development Goal ${index + 1}: Target/Metric is required.\n`;
+                    if (!timeline.value) errorMessage += `Development Goal ${index + 1}: Timeline is required.\n`;
+                });
+            } else if (sectionName === 'skillsGap') {
+                const sgRows = document.querySelectorAll('#skillsGapTableBody tr');
+                if (sgRows.length === 0) {
+                    errorMessage += 'At least one Skills Gap entry is required.\n';
+                }
+                sgRows.forEach((row, index) => {
+                    const skillArea = row.querySelector('input[name^="skillArea_"]');
+                    const currentLevel = row.querySelector('input[name^="currentLevel_"]');
+                    const desiredLevel = row.querySelector('input[name^="desiredLevel_"]');
+                    const gapDescription = row.querySelector('textarea[name^="gapDescription_"]');
+                    if (!skillArea.value) errorMessage += `Skills Gap ${index + 1}: Skill/Area is required.\n`;
+                    if (!currentLevel.value) errorMessage += `Skills Gap ${index + 1}: Current Level is required.\n`;
+                    if (!desiredLevel.value) errorMessage += `Skills Gap ${index + 1}: Desired Level is required.\n`;
+                    if (!gapDescription.value) errorMessage += `Skills Gap ${index + 1}: Gap Description is required.\n`;
+                });
+            } else if (sectionName === 'actionPlan') {
+                const apRows = document.querySelectorAll('#actionPlanTableBody tr');
+                if (apRows.length === 0) {
+                    errorMessage += 'At least one Action Plan & Learning Activity is required.\n';
+                }
+                apRows.forEach((row, index) => {
+                    const activity = row.querySelector('textarea[name^="activity_"]');
+                    const startDate = row.querySelector('input[name^="actionStartDate_"]');
+                    const endDate = row.querySelector('input[name^="actionEndDate_"]');
+                    const status = row.querySelector('select[name^="status_"]');
+                    const resourcesNeeded = row.querySelector('textarea[name^="resourcesNeeded_"]');
+                    if (!activity.value) errorMessage += `Action Plan ${index + 1}: Activity is required.\n`;
+                    if (!startDate.value) errorMessage += `Action Plan ${index + 1}: Start Date is required.\n`;
+                    if (!endDate.value) errorMessage += `Action Plan ${index + 1}: End Date is required.\n`;
+                    if (!status.value) errorMessage += `Action Plan ${index + 1}: Status is required.\n`;
+                    if (!resourcesNeeded.value) errorMessage += `Action Plan ${index + 1}: Resources Needed is required.\n`;
+                    if (startDate.value && endDate.value && new Date(startDate.value) > new Date(endDate.value)) {
+                        errorMessage += `Action Plan ${index + 1}: Start Date cannot be after End Date.\n`;
+                    }
+                });
+            } else if (sectionName === 'evaluationFeedback') {
+                const efRows = document.querySelectorAll('#evaluationFeedbackTableBody tr');
+                if (efRows.length === 0) {
+                    errorMessage += 'At least one Evaluation & Feedback entry is required.\n';
+                }
+                efRows.forEach((row, index) => {
+                    const date = row.querySelector('input[name^="evalDate_"]');
+                    const evaluator = row.querySelector('input[name^="evaluator_"]');
+                    const notesFeedback = row.querySelector('textarea[name^="notesFeedback_"]');
+                    const nextSteps = row.querySelector('textarea[name^="nextSteps_"]');
+                    if (!date.value) errorMessage += `Evaluation ${index + 1}: Date is required.\n`;
+                    if (!evaluator.value) errorMessage += `Evaluation ${index + 1}: Evaluator is required.\n`;
+                    if (!notesFeedback.value) errorMessage += `Evaluation ${index + 1}: Notes/Feedback is required.\n`;
+                    if (!nextSteps.value) errorMessage += `Evaluation ${index + 1}: Next Steps are required.\n`;
+                });
+            }
+
+
+            if (errorMessage) {
+                showMessageBox('Validation Error', errorMessage);
+                isValid = false;
+            }
+            return isValid;
+        }
+
+
+        // Function to save employee details (separated from main form data save)
+        window.saveEmployeeDetails = async function() {
+            try {
+                if (!validateFormSection('employeeInfo')) {
+                    return false;
+                }
+                saveCurrentPlanToStorage();
+                showMessageBox('Success', 'Employee Details saved successfully!');
+                toggleSectionEditMode('employeeInfo', false);
+                logActionToHistory('Saved Section', 'Employee Information', 'Employee details saved.');
+                return true;
+            } catch (error) {
+                console.error("Error saving employee details:", error);
+                showMessageBox('Error', `Failed to save employee details: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Function to save main form data (now only Signatures, as EmployeeInfo is separate)
+        window.saveMainFormData = async function() {
+            try {
+                if (!validateFormSection('signatures')) { // Only validate signatures here
+                    return false;
+                }
+                saveCurrentPlanToStorage();
+                showMessageBox('Success', 'Signatures saved successfully!');
+                toggleSectionEditMode('signatures', false);
+                logActionToHistory('Saved Section', 'Signatures', 'Signatures saved.');
+                return true;
+            } catch (error) {
+                console.error("Error saving main form data (signatures):", error);
+                showMessageBox('Error', `Failed to save signatures: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Function to save objectives
+        window.saveObjectives = async function() {
+            try {
+                if (!validateFormSection('objectives')) {
+                    return false;
+                }
+                saveCurrentPlanToStorage();
+                showMessageBox('Success', 'Objectives saved successfully!');
+                toggleSectionEditMode('objectives', false);
+                logActionToHistory('Saved Section', 'Objectives/KPIs', 'Objectives saved.');
+                return true;
+            } catch (error) {
+                console.error("Error saving objectives:", error);
+                showMessageBox('Error', `Failed to save objectives: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Function to save monthly reviews
+        window.saveMonthlyReviews = async function(onlyScoreUpdate = false) {
+            try {
+                if (!onlyScoreUpdate && !validateFormSection('reviews')) {
+                    return false;
+                }
+                saveCurrentPlanToStorage();
+                showMessageBox('Success', 'Monthly Reviews saved successfully!');
+                if (!onlyScoreUpdate) {
+                    toggleSectionEditMode('reviews', false);
+                    logActionToHistory('Saved Section', 'Monthly Performance Review Records', 'Monthly reviews saved.');
+                } else {
+                    logActionToHistory('Saved Section', 'Monthly Performance Review Records', 'Monthly review scores updated.');
+                }
+                return true;
+            }
+            catch (error) {
+                console.error("Error saving monthly reviews:", error);
+                showMessageBox('Error', `Failed to save monthly reviews: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Function to save discussion log
+        window.saveDiscussionLog = async function() {
+            try {
+                if (!validateFormSection('discussions')) {
+                    return false;
+                }
+                saveCurrentPlanToStorage();
+                showMessageBox('Success', 'Discussion Log saved successfully!');
+                toggleSectionEditMode('discussions', false);
+                logActionToHistory('Saved Section', 'Action Plan & Strategy Discussion Log', 'Discussion log saved.');
+                return true;
+          
